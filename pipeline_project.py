@@ -3,8 +3,9 @@ import urllib.request
 import pandas as pd
 import random
 import os
+import subprocess
 
-#------------------------------------------------S1:DOWNLOAD SAMPLES FROM ENA: PRJEB7774
+#------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
 
 seq_info=pd.read_csv("~/Desktop/project_2/CRC_seq_info.txt", sep="\t")
@@ -25,26 +26,50 @@ c = ["Stool sample from controls",
 
 combined_url=[]
 for i in c:
-    subset = seq_single[seq_single["sample_title"] == i]["fastq_ftp"]
-    all_url=random.sample(subset.tolist(), 10)
+    fastq_ftp = seq_single[seq_single["sample_title"] == i]["fastq_ftp"]
+    all_url=random.sample(fastq_ftp.tolist(), 10) #changes this if need more/less samples
     combined_url.extend(all_url)
 
-print(combined_url)
-
-# Directory to save files
-out_dir = "~/Desktop/project_2/ena_fastq"
+# Directory to save files - Dowloads
+out_dir = "ena_fastq"
 os.makedirs(out_dir, exist_ok=True)
 
 for url in combined_url:
     # Extract filename from URL
     filename = url.split("/")[-1]
+    url = "https://" + url
     filepath = os.path.join(out_dir, filename)
     print(f"Downloading {url} -> {filepath}")
-    urllib.request.urlretrieve(url, filepath)
+#   urllib.request.urlretrieve(url, filepath)
 
+#make a metadata for downstream analysis later on:
+metadata_samp = seq_info[seq_info["fastq_ftp"].isin(combined_url)][["run_accession","sample_title"]]
+new_i=[]
+for i in metadata_samp["sample_title"]:
+    if i=="Stool sample from controls":
+       new_i.append("Controls")
+    else:
+       if i=="Stool sample from carcinoma":
+          new_i.append("Carcinoma")
+       else:
+          new_i.append("Advanced Adenoma")
 
+metadata_samp["group_title"] = new_i
+print(metadata_samp)
 
+#------------------------------------------------S2: RUN QUALITY CONTROLS ON RAW SEQ:
+#FASTQC:
+qc_dir = "fastqc_dir"
+print(os.listdir(out_dir))
 
+#create qc_dir before running fastqc:
+os.makedirs(qc_dir, exist_ok=True)
 
+for filename in os.listdir(out_dir):
+   filepath=os.path.join(out_dir, filename)
+   subprocess.run(
+   ["fastqc", filepath, "-o", qc_dir]
+   )
 
+#FASTP for trimming
 
