@@ -58,7 +58,7 @@ metadata_samp["group_title"] = new_i
 print(metadata_samp)
 
 #------------------------------------------------S2: RUN QUALITY CONTROLS ON RAW SEQ:
-#FASTQC:
+#--------FASTQC:
 qc_dir = "fastqc_dir"
 print(os.listdir(out_dir))
 
@@ -71,5 +71,18 @@ for filename in os.listdir(out_dir):
    ["fastqc", filepath, "-o", qc_dir]
    )
 
-#FASTP for trimming
+#--------FASTP for trimming
+trimmed_dir = "fastp_dir"
+#create trimmed_dir before trimming:
+os.makedirs(trimmed_dir, exist_ok=True)
 
+for filename in os.listdir(out_dir):
+   filepath_in=os.path.join(out_dir, filename)
+   filepath_out=os.path.join(trimmed_dir, filename)
+   print(f"trimming {filepath_in} to {filepath_out}")
+   subprocess(
+    "fastp",
+    "-i", filepath_in,
+    "-o", filepath_out,
+    "--html", filepath_out + ".html"
+   )
