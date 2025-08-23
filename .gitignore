@@ -1,0 +1,4 @@
+*.fastq
+*.fastq.gz
+ena_fastq/
+fastqc_dir/
