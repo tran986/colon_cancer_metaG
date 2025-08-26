@@ -79,11 +79,9 @@ multiqc_dir = "multiqc_dir"
 #create qc_dir before running fastqc:
 os.makedirs(multiqc_dir, exist_ok=True)
 
-multiqc.run([
-    qc_dir,   # input directory (where your FastQC/other tool outputs are)
-    "-o", multiqc_dir  # output directory
-])
+multiqc.run(qc_dir, "-o", multiqc_dir)
 
+"""
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
 #create trimmed_dir before trimming:
@@ -99,6 +97,8 @@ for filename in os.listdir(out_dir):
     "-o", filepath_out,
     "--html", filepath_out + ".html"
    )
+
+"""
 
 
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
