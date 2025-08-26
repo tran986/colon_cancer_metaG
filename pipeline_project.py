@@ -4,6 +4,7 @@ import pandas as pd
 import random
 import os
 import subprocess
+import multiqc
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
@@ -40,7 +41,7 @@ for url in combined_url:
     url = "https://" + url
     filepath = os.path.join(out_dir, filename)
     print(f"Downloading {url} -> {filepath}")
-#   urllib.request.urlretrieve(url, filepath)
+    urllib.request.urlretrieve(url, filepath)
 
 #make a metadata for downstream analysis later on:
 metadata_samp = seq_info[seq_info["fastq_ftp"].isin(combined_url)][["run_accession","sample_title"]]
@@ -67,9 +68,21 @@ os.makedirs(qc_dir, exist_ok=True)
 
 for filename in os.listdir(out_dir):
    filepath=os.path.join(out_dir, filename)
+   print(f"running QC on {filename} to {filepath}")
    subprocess.run(
    ["fastqc", filepath, "-o", qc_dir]
    )
+
+#--------MULTIQC:
+multiqc_dir = "multiqc_dir"
+
+#create qc_dir before running fastqc:
+os.makedirs(multiqc_dir, exist_ok=True)
+
+multiqc.run([
+    qc_dir,   # input directory (where your FastQC/other tool outputs are)
+    "-o", multiqc_dir  # output directory
+])
 
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
@@ -86,3 +99,7 @@ for filename in os.listdir(out_dir):
     "-o", filepath_out,
     "--html", filepath_out + ".html"
    )
+
+
+#------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
+#taxa_prof_dir = ""
