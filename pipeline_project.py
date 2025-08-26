@@ -81,7 +81,6 @@ os.makedirs(multiqc_dir, exist_ok=True)
 
 multiqc.run(qc_dir, "-o", multiqc_dir)
 
-"""
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
 #create trimmed_dir before trimming:
@@ -91,15 +90,11 @@ for filename in os.listdir(out_dir):
    filepath_in=os.path.join(out_dir, filename)
    filepath_out=os.path.join(trimmed_dir, filename)
    print(f"trimming {filepath_in} to {filepath_out}")
-   subprocess(
+   subprocess.run([
     "fastp",
     "-i", filepath_in,
     "-o", filepath_out,
-    "--html", filepath_out + ".html"
-   )
-
-"""
-
+    "--html", filepath_out + ".html"])
 
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
 #taxa_prof_dir = ""
