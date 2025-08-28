@@ -77,10 +77,6 @@ for filename in os.listdir(out_dir):
 
 #--------MULTIQC:
 multiqc_dir = "multiqc_dir"
-
-#create qc_dir before running fastqc:
-os.makedirs(multiqc_dir, exist_ok=True)
-
 #multiqc.run(qc_dir, "-o", multiqc_dir)
 
 #--------FASTP for trimming
@@ -103,19 +99,26 @@ for filename in os.listdir(out_dir):
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
 taxa_prof_dir = "metaphlan_dir"
 
-#create taxa_prof_dir for metaphlan:
 os.makedirs(taxa_prof_dir, exist_ok=True)
 
+#install metaphlan db:
+subprocess.run(["metaphlan",
+                "--install",
+                "--db_dir", "metaphlan_db"
+])
+
 for filename in os.listdir(trimmed_dir):
-   if filename.endswith(".fastq.gz"):
+   #if filename.endswith(".fastq.gz"):
+   if filename == "ERR710415.fastq.gz" : #test with 1 samplec
       input_path=os.path.join(trimmed_dir, filename)
-      output_txt=filename.replace("fastq.gz","_profile.txt")
+      output_txt=filename.replace(".fastq.gz","_profile.txt")
       output_path=os.path.join(taxa_prof_dir,output_txt)
       print(f"profilling taxa in {input_path} to {output_path}")
       subprocess.run(["metaphlan",
                       input_path,
-                      "--input_type","fastq", 
+                      "--input_type", "fastq", 
                       "--nproc", "4",
-                      "-o", output_path                
+                      "-o", output_path,
+                      "-v"           
                       ])
-   
+
