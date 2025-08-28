@@ -41,7 +41,7 @@ for url in combined_url:
     url = "https://" + url
     filepath = os.path.join(out_dir, filename)
     print(f"Downloading {url} -> {filepath}")
-    urllib.request.urlretrieve(url, filepath)
+    #urllib.request.urlretrieve(url, filepath)
 
 #make a metadata for downstream analysis later on:
 metadata_samp = seq_info[seq_info["fastq_ftp"].isin(combined_url)][["run_accession","sample_title"]]
@@ -69,9 +69,11 @@ os.makedirs(qc_dir, exist_ok=True)
 for filename in os.listdir(out_dir):
    filepath=os.path.join(out_dir, filename)
    print(f"running QC on {filename} to {filepath}")
+   """
    subprocess.run(
    ["fastqc", filepath, "-o", qc_dir]
    )
+   """
 
 #--------MULTIQC:
 multiqc_dir = "multiqc_dir"
@@ -79,7 +81,7 @@ multiqc_dir = "multiqc_dir"
 #create qc_dir before running fastqc:
 os.makedirs(multiqc_dir, exist_ok=True)
 
-multiqc.run(qc_dir, "-o", multiqc_dir)
+#multiqc.run(qc_dir, "-o", multiqc_dir)
 
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
@@ -90,11 +92,30 @@ for filename in os.listdir(out_dir):
    filepath_in=os.path.join(out_dir, filename)
    filepath_out=os.path.join(trimmed_dir, filename)
    print(f"trimming {filepath_in} to {filepath_out}")
+   """
    subprocess.run([
     "fastp",
     "-i", filepath_in,
     "-o", filepath_out,
     "--html", filepath_out + ".html"])
-
+   """
+   
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
-#taxa_prof_dir = ""
+taxa_prof_dir = "metaphlan_dir"
+
+#create taxa_prof_dir for metaphlan:
+os.makedirs(taxa_prof_dir, exist_ok=True)
+
+for filename in os.listdir(trimmed_dir):
+   if filename.endswith(".fastq.gz"):
+      input_path=os.path.join(trimmed_dir, filename)
+      output_txt=filename.replace("fastq.gz","_profile.txt")
+      output_path=os.path.join(taxa_prof_dir,output_txt)
+      print(f"profilling taxa in {input_path} to {output_path}")
+      subprocess.run(["metaphlan",
+                      input_path,
+                      "--input_type","fastq", 
+                      "--nproc", "4",
+                      "-o", output_path                
+                      ])
+   
