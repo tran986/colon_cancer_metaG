@@ -4,5 +4,6 @@ ena_fastq/
 fastqc_dir/
 fastp_dir/
 multiqc_dir/
+metaphlan_dir/
 *.html
 
