@@ -97,6 +97,8 @@ for filename in os.listdir(out_dir):
    """
    
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
+"""
+#if enough disk space only:
 taxa_prof_dir = "metaphlan_dir"
 
 os.makedirs(taxa_prof_dir, exist_ok=True)
@@ -107,6 +109,7 @@ subprocess.run(["metaphlan",
                 "--db_dir", "metaphlan_db"
 ])
 
+#run metaphlan:
 for filename in os.listdir(trimmed_dir):
    #if filename.endswith(".fastq.gz"):
    if filename == "ERR710415.fastq.gz" : #test with 1 samplec
@@ -121,4 +124,29 @@ for filename in os.listdir(trimmed_dir):
                       "-o", output_path,
                       "-v"           
                       ])
+"""
+#------------------------------------------------S3 RUN mOTUS instead FOR TAXA PROFILING :
+#this is more compatible to local machine run:
+motus_dir = "motus_dir"
+os.makedirs("motus_dir" ,exist_ok=True)
+
+cmd_download = ["motus", "downloadDB"]
+result = subprocess.run(cmd_download, capture_output=True, text=True)
+print("STDOUT:", result.stdout)
+print("STDERR:", result.stderr)
+
+for filename in os.listdir(trimmed_dir):
+   if filename.endswith("fastq.gz"):
+      input_path=os.path.join(trimmed_dir,filename)
+      output_path=os.path.join("motus_outdir",filename)
+      output_text=output_path.replace("fastq.gz","_profile.txt")
+      print(f"profiling taxa in {filename} to {output_text}")
+      subprocess.run(
+         ["motus",
+         "profile",
+         "-s", input_path,
+         "-o", output_text], 
+         check=True)
+
+
 
