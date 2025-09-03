@@ -129,27 +129,28 @@ lines_per_chunk = 4_000_000
 nproc = 1
 
 print("Splitting FASTQ into smaller chunks...")
-chunk_files = []
-with gzip.open(trimmed_dir, "rt") as f:
-    chunk_idx = 0
-    lines_buffer = []
-    for i, line in enumerate(f, 1):
-        lines_buffer.append(line)
-        if i % lines_per_chunk == 0:
-            chunk_name = os.path.join(tmp_dir, f"chunk_{chunk_idx}.fastq")
+for filename.endswith(".gz") in os.listdir(trimmed_dir):
+    filepath = os.path.join(trimmed_dir, filename)
+    sample_name=filename.split(".")[0]
+
+    with gzip.open(filepath, "rt") as f:
+        chunk_idx = 0
+        lines_buffer = []
+        for i, line in enumerate(f, 1):
+            lines_buffer.append(line)
+            if i % lines_per_chunk == 0:
+                chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
+                with gzip.open(chunk_name, "wt") as cf:
+                    cf.writelines(lines_buffer)
+                lines_buffer = []
+                chunk_idx += 1
+    # Write remaining lines
+        if lines_buffer:
+            chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
             with open(chunk_name, "w") as cf:
                 cf.writelines(lines_buffer)
-            chunk_files.append(chunk_name)
-            lines_buffer = []
-            chunk_idx += 1
-    # Write remaining lines
-    if lines_buffer:
-        chunk_name = os.path.join(tmp_dir, f"chunk_{chunk_idx}.fastq")
-        with open(chunk_name, "w") as cf:
-            cf.writelines(lines_buffer)
-        chunk_files.append(chunk_name)
-
-print(f"Created {len(chunk_files)} chunks.")
+                        
+    print(f"Created {chunk_idx + 1} chunks for {sample_name}.")
 
 """
 for filename in os.listdir(trimmed_dir):
