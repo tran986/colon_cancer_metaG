@@ -4,12 +4,15 @@ import pandas as pd
 import random
 import os
 import subprocess
-import multiqc
+#import multiqc
+#import shutil
+import gzip
+from glob import glob
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
 
-seq_info=pd.read_csv("~/Desktop/project_2/CRC_seq_info.txt", sep="\t")
+seq_info = pd.read_csv("/mnt/c/Users/Nia Tran/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 
 #access sample ID from metadata:
 print(seq_info.head(5))
@@ -41,7 +44,7 @@ for url in combined_url:
     url = "https://" + url
     filepath = os.path.join(out_dir, filename)
     print(f"Downloading {url} -> {filepath}")
-    urllib.request.urlretrieve(url, filepath)
+    #urllib.request.urlretrieve(url, filepath)
 
 #make a metadata for downstream analysis later on:
 metadata_samp = seq_info[seq_info["fastq_ftp"].isin(combined_url)][["run_accession","sample_title"]]
@@ -60,6 +63,7 @@ print(metadata_samp)
 
 #------------------------------------------------S2: RUN QUALITY CONTROLS ON RAW SEQ:
 #--------FASTQC:
+
 qc_dir = "fastqc_dir"
 print(os.listdir(out_dir))
 
@@ -69,15 +73,19 @@ os.makedirs(qc_dir, exist_ok=True)
 for filename in os.listdir(out_dir):
    filepath=os.path.join(out_dir, filename)
    print(f"running QC on {filename} to {filepath}")
+   """
    subprocess.run(
    ["fastqc", filepath, "-o", qc_dir]
    )
-
-  
+   """
 
 #--------MULTIQC:
 multiqc_dir = "multiqc_dir"
-multiqc.run(qc_dir, "-o", multiqc_dir)
+#multiqc.run(qc_dir, "-o", multiqc_dir)
+
+#remove fastqc dir after multiqc results are generated:
+#shutil.rmtree(qc_dir)
+print(f"{qc_dir} has been removed to clear disk space")
 
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
@@ -88,13 +96,13 @@ for filename in os.listdir(out_dir):
    filepath_in=os.path.join(out_dir, filename)
    filepath_out=os.path.join(trimmed_dir, filename)
    print(f"trimming {filepath_in} to {filepath_out}")
+   """
    subprocess.run([
     "fastp",
     "-i", filepath_in,
     "-o", filepath_out,
     "--html", filepath_out + ".html"])
-  
-   
+   """
    
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
 #if enough disk space only:
@@ -103,15 +111,47 @@ taxa_prof_dir = "metaphlan_dir"
 os.makedirs(taxa_prof_dir, exist_ok=True)
 
 #install metaphlan db:
+
+"""
 subprocess.run([
 "metaphlan" ,
 "--install" ,
-"--bowtie2db",
-"/opt/homebrew/Caskroom/miniforge/base/envs/motus_env/lib/python3.9/site-packages/metaphlan/metaphlan_databases"
+"/mnt/c/Users/Nia\ Tran/colon_cancer_metaG/metaphlan_dir"
 ], check=True) #change the dir to db
 
 #run metaphlan:
+"""
+#splitting into chunks:
+tmp_dir="fastq_chunks"
+os.makedirs(tmp_dir, exist_ok=True)
 
+lines_per_chunk = 4_000_000  
+nproc = 1
+
+print("Splitting FASTQ into smaller chunks...")
+chunk_files = []
+with gzip.open(trimmed_dir, "rt") as f:
+    chunk_idx = 0
+    lines_buffer = []
+    for i, line in enumerate(f, 1):
+        lines_buffer.append(line)
+        if i % lines_per_chunk == 0:
+            chunk_name = os.path.join(tmp_dir, f"chunk_{chunk_idx}.fastq")
+            with open(chunk_name, "w") as cf:
+                cf.writelines(lines_buffer)
+            chunk_files.append(chunk_name)
+            lines_buffer = []
+            chunk_idx += 1
+    # Write remaining lines
+    if lines_buffer:
+        chunk_name = os.path.join(tmp_dir, f"chunk_{chunk_idx}.fastq")
+        with open(chunk_name, "w") as cf:
+            cf.writelines(lines_buffer)
+        chunk_files.append(chunk_name)
+
+print(f"Created {len(chunk_files)} chunks.")
+
+"""
 for filename in os.listdir(trimmed_dir):
    if filename.endswith(".fastq.gz"):
    #if filename == "ERR710415.fastq.gz" : #test with 1 sample
@@ -122,9 +162,8 @@ for filename in os.listdir(trimmed_dir):
       subprocess.run(["metaphlan",
                       input_path,
                       "--input_type", "fastq", 
-                      "--nproc", "4",
-                      "-o", output_path,
-                      "--bowtie2db", "/opt/homebrew/Caskroom/miniforge/base/envs/motus_env/lib/python3.9/site-packages/metaphlan/metaphlan_databases"    
+                      "--nproc", "1",
+                      "-o", output_path  
                       ], check=True) #change dir to the db
 
 #merging metaphlan output tbls:
@@ -134,11 +173,6 @@ subprocess.run([
     *[os.path.join(taxa_prof_dir, f) for f in os.listdir(taxa_prof_dir) if f.endswith("_profile.txt")],
     "--o", merge_metaphlan
 ], check=True)
-
-
-
-
-
-
+"""
 
 
