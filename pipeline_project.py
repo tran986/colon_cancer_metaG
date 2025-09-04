@@ -110,18 +110,7 @@ taxa_prof_dir = "metaphlan_dir"
 
 os.makedirs(taxa_prof_dir, exist_ok=True)
 
-#install metaphlan db:
-
-"""
-subprocess.run([
-"metaphlan" ,
-"--install" ,
-"/mnt/c/Users/Nia\ Tran/colon_cancer_metaG/metaphlan_dir"
-], check=True) #change the dir to db
-
-#run metaphlan:
-"""
-#splitting into chunks:
+#splitting into chunks:-in order to run in local machine with low RAM:
 tmp_dir="fastq_chunks"
 os.makedirs(tmp_dir, exist_ok=True)
 
@@ -129,26 +118,26 @@ lines_per_chunk = 4_000_000
 nproc = 1
 
 print("Splitting FASTQ into smaller chunks...")
-for filename.endswith(".gz") in os.listdir(trimmed_dir):
-    filepath = os.path.join(trimmed_dir, filename)
-    sample_name=filename.split(".")[0]
-
-    with gzip.open(filepath, "rt") as f:
-        chunk_idx = 0
-        lines_buffer = []
-        for i, line in enumerate(f, 1):
-            lines_buffer.append(line)
-            if i % lines_per_chunk == 0:
-                chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
-                with gzip.open(chunk_name, "wt") as cf:
-                    cf.writelines(lines_buffer)
-                lines_buffer = []
-                chunk_idx += 1
+for filename in os.listdir(trimmed_dir):
+    if filename.endswith(".gz"):
+        filepath = os.path.join(trimmed_dir, filename)
+        sample_name=filename.split(".")[0]
+        with gzip.open(filepath, "rt") as f:
+            chunk_idx = 0
+            lines_buffer = []
+            for i, line in enumerate(f, 1):
+                lines_buffer.append(line)
+                if i % lines_per_chunk == 0:
+                    chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
+                    with gzip.open(chunk_name, "wt") as cf:
+                        cf.writelines(lines_buffer)
+                        lines_buffer = []
+                        chunk_idx += 1
     # Write remaining lines
-        if lines_buffer:
-            chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
-            with open(chunk_name, "w") as cf:
-                cf.writelines(lines_buffer)
+            if lines_buffer:
+                chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
+                with open(chunk_name, "w") as cf:
+                    cf.writelines(lines_buffer)
                         
     print(f"Created {chunk_idx + 1} chunks for {sample_name}.")
 
@@ -175,5 +164,3 @@ subprocess.run([
     "--o", merge_metaphlan
 ], check=True)
 """
-
-
