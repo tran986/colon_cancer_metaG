@@ -1,5 +1,6 @@
 *.fastq
 *.fastq.gz
+fastq_chunks
 ena_fastq/
 fastqc_dir/
 fastp_dir/
