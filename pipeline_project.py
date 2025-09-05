@@ -5,7 +5,7 @@ import random
 import os
 import subprocess
 #import multiqc
-#import shutil
+import shutil
 import gzip
 from glob import glob
 
@@ -105,13 +105,10 @@ for filename in os.listdir(out_dir):
    """
    
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
-#if enough disk space only:
-taxa_prof_dir = "metaphlan_dir"
-
-os.makedirs(taxa_prof_dir, exist_ok=True)
-
 #splitting into chunks:-in order to run in local machine with low RAM:
+
 tmp_dir="fastq_chunks"
+
 os.makedirs(tmp_dir, exist_ok=True)
 
 lines_per_chunk = 4_000_000  
@@ -122,41 +119,80 @@ for filename in os.listdir(trimmed_dir):
     if filename.endswith(".gz"):
         filepath = os.path.join(trimmed_dir, filename)
         sample_name=filename.split(".")[0]
-        with gzip.open(filepath, "rt") as f:
+        with gzip.open(filepath, "rt") as f: #open fastq file in txt mode
             chunk_idx = 0
             lines_buffer = []
             for i, line in enumerate(f, 1):
                 lines_buffer.append(line)
                 if i % lines_per_chunk == 0:
-                    chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
+                    chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq.gz")
                     with gzip.open(chunk_name, "wt") as cf:
                         cf.writelines(lines_buffer)
                         lines_buffer = []
                         chunk_idx += 1
     # Write remaining lines
             if lines_buffer:
-                chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq")
-                with open(chunk_name, "w") as cf:
+                chunk_name = os.path.join(tmp_dir, f"{sample_name}_chunk_{chunk_idx}.fastq.gz")
+                with open(chunk_name, "wt") as cf:
                     cf.writelines(lines_buffer)
                         
-    print(f"Created {chunk_idx + 1} chunks for {sample_name}.")
+        print(f"Created {chunk_idx + 1} chunks for {sample_name}.")
 
-"""
-for filename in os.listdir(trimmed_dir):
+#make sure they all gunzipped (insanity check):
+
+for filename in os.listdir(tmp_dir):
+    filepath = os.path.join(tmp_dir, filename)
+    # Skip directories
+    if os.path.isdir(filepath):
+        continue
+
+    # Check if file is already gzipped
+    with open(filepath, 'rb') as f:
+        magic_number = f.read(2)
+    if magic_number != b'\x1f\x8b':  # not gzipped
+        gz_path = filepath + ".gz"
+        with open(filepath, 'rb') as f_in, gzip.open(gz_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        os.remove(filepath)  # remove the original uncompressed file
+        print(f"Gzipped {filename} → {os.path.basename(gz_path)}")
+    else:
+        print(f"Already gzipped: {filename}")
+
+#run "rm *.fastq" if there are replicates:
+for filename in os.listdir(tmp_dir):
+    if filename.endswith(".fastq"):
+        filepath=os.path.join(tmp_dir, filename)
+        os.remove(filepath)
+        print(f"Delete {filename} because of unzipp")
+
+
+#run Metaphlan3:
+taxa_prof_dir = "metaphlan_dir"
+
+os.makedirs(taxa_prof_dir, exist_ok=True)
+
+#metaphlan version 3
+#metaphlan --install --bowtie2db "/home/tran986/mp_database_new"
+
+for filename in os.listdir(tmp_dir):
    if filename.endswith(".fastq.gz"):
    #if filename == "ERR710415.fastq.gz" : #test with 1 sample
-      input_path=os.path.join(trimmed_dir, filename)
-      output_txt=filename.replace(".fastq.gz","_profile.txt")
+      input_path=os.path.join(tmp_dir, filename)
+      output_txt=filename.replace(".fastq","_profile.txt")
       output_path=os.path.join(taxa_prof_dir,output_txt)
-      print(f"profilling taxa in {input_path} to {output_path}")
+      print(f"profilling taxa in chunk {input_path} to {output_path}")
       subprocess.run(["metaphlan",
                       input_path,
                       "--input_type", "fastq", 
                       "--nproc", "1",
+                      "--bowtie2db", "/home/tran986/mp_database_new",
+                      "--index", "mpa_v31_CHOCOPhlAn_201901",
                       "-o", output_path  
                       ], check=True) #change dir to the db
 
 #merging metaphlan output tbls:
+"""
+#need to merge chunk before merge metaphlan + test them out
 merge_metaphlan = os.path.join(taxa_prof_dir, "merged_file.txt")
 subprocess.run([
     "merge_metaphlan_tables.py",
@@ -164,3 +200,5 @@ subprocess.run([
     "--o", merge_metaphlan
 ], check=True)
 """
+
+
