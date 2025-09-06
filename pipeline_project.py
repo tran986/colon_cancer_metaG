@@ -118,7 +118,7 @@ os.makedirs(tmp_dir, exist_ok=True)
 
 lines_per_chunk = 4_000_000  
 nproc = 1
-"""
+
 print("Splitting FASTQ into smaller chunks...")
 for filename in os.listdir(trimmed_dir):
     if filename.endswith(".fastq.gz"):
@@ -177,10 +177,10 @@ for filename in os.listdir(tmp_dir):
         print(f"Delete {filename} because of unzipp")
 
 #run Metaphlan3:
-"""
+
 taxa_prof_dir = "metaphlan_dir"
 os.makedirs(taxa_prof_dir, exist_ok=True)
-"""
+
 #metaphlan version 3 (compatible with python 3.9)
 #metaphlan --install --bowtie2db "/home/tran986/mp_database_new"
 
@@ -200,17 +200,19 @@ for filename in os.listdir(tmp_dir):
                       "-o", output_path  
                       ], check=True) #change dir to the db
       
-"""
+
 #merge chunks for each sample:
-taxa_prac="metaphlan_dir_cp"
-merged_chunks_dir="metaphlan_dir_cp/merge"
+
+#taxa_prac="metaphlan_dir_cp"
+merged_chunks_dir=os.path.join(taxa_prof_dir,"merge")
+print(merged_chunks_dir)
 os.makedirs(merged_chunks_dir, exist_ok=True)
-"""
+
 groups = defaultdict(list)
-for f in os.listdir(taxa_prac):
+for f in os.listdir(taxa_prof_dir):
     if f.endswith("_profile.txt") and "_chunk_" in f:
         sample = f.split("_chunk_")[0]
-        groups[sample].append(os.path.join(taxa_prac, f))
+        groups[sample].append(os.path.join(taxa_prof_dir, f))
 
 for sample, files in groups.items():
     dfs = []
@@ -222,20 +224,20 @@ for sample, files in groups.items():
     merged_df = pd.concat(dfs, axis=1)
 
     # Average across chunks (to keep values in relative abundance scale)
-    #merged_df = merged_df.mean(axis=1).to_frame(name=sample)
+    merged_df = merged_df.mean(axis=1).to_frame(name=sample)
 
      # Write back with MetaPhlAn headers
-    print("Writing sum of merged chunks to {merged_chunk_dir}")
+    print(f"Writing sum of merged chunks to {merged_chunks_dir}")
     out_path = os.path.join(merged_chunks_dir, f"{sample}_profile.txt")
     with open(out_path, "w") as out:
+        out.write(f"#mpa_v31_CHOCOPhlAn_201901\n")
+        out.write(f"#/opt/homebrew/Caskroom/miniforge/base/envs/metaphlan3/bin/metaphlan\n")
         out.write(f"#SampleID\tMetaphlan_Analysis\n")
         out.write(f"#clade_name\tNCBI_tax_id\trelative_abundance\n")
         merged_df.to_csv(out, sep="\t")
-        
-"""
+  
 #merging all metaphlan output sample tbls:
-merge_sample_dir = os.path.join(taxa_prac, "all_sample_merged_file.txt") #out
-merged_chunks_dir=os.path.join(taxa_prac, "merge")
+merge_sample_dir = os.path.join(taxa_prof_dir, "all_sample_merged_file.txt") #out
 merge_all_samp=[]
 for filename in os.listdir(merged_chunks_dir):
    if filename.endswith(".txt"):
