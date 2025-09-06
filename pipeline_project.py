@@ -3,6 +3,7 @@ import urllib.request
 import pandas as pd
 import random
 import os
+from collections import defaultdict
 import subprocess
 #import multiqc
 import shutil
@@ -167,7 +168,7 @@ for filename in os.listdir(tmp_dir):
     else:
         print(f"Already gzipped: {filename}")
 
-"""
+
 #run "rm *.fastq" if there are replicates:
 for filename in os.listdir(tmp_dir):
     if filename.endswith(".fastq"):
@@ -176,9 +177,10 @@ for filename in os.listdir(tmp_dir):
         print(f"Delete {filename} because of unzipp")
 
 #run Metaphlan3:
+"""
 taxa_prof_dir = "metaphlan_dir"
 os.makedirs(taxa_prof_dir, exist_ok=True)
-
+"""
 #metaphlan version 3 (compatible with python 3.9)
 #metaphlan --install --bowtie2db "/home/tran986/mp_database_new"
 
@@ -199,6 +201,29 @@ for filename in os.listdir(tmp_dir):
                       ], check=True) #change dir to the db
       
 """
+#merge chunks for each sample:
+taxa_prac="metaphlan_dir_cp"
+merged_chunks_dir="metaphlan_dir_cp/merge"
+os.makedirs(merged_chunks_dir, exist_ok=True)
+
+groups = defaultdict(list)
+for filename in os.listdir(taxa_prac):
+    if "_chunk_" in filename:
+        sample_id = filename.split("_chunk_")[0]  # part before "_chunk_"
+        groups[sample_id].append(filename)
+
+# Print groups with multiple chunks
+for sample, files in groups.items():
+    dfs = []
+    for f in files:
+        df = pd.read_csv(f, sep="\t", index_col=0)
+        dfs.append(df)
+    merged_df = sum(dfs)  # element-wise sum of abundances
+    out_path = os.path.join(merged_chunks_dir, f"{sample}_profile.txt")
+    merged_df.to_csv(out_path, sep="\t")
+    print(f"Merged {len(files)} chunks for sample {sample} → {out_path}")
+                
+"""
 #need to merge chunk before merge metaphlan + test them out
 #merging metaphlan output tbls:
 merge_metaphlan = os.path.join(taxa_prof_dir, "merged_file.txt")
@@ -208,3 +233,4 @@ subprocess.run([
     "--o", merge_metaphlan
 ], check=True)
 """
+
