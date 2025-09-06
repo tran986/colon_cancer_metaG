@@ -205,7 +205,7 @@ for filename in os.listdir(tmp_dir):
 taxa_prac="metaphlan_dir_cp"
 merged_chunks_dir="metaphlan_dir_cp/merge"
 os.makedirs(merged_chunks_dir, exist_ok=True)
-
+"""
 groups = defaultdict(list)
 for f in os.listdir(taxa_prac):
     if f.endswith("_profile.txt") and "_chunk_" in f:
@@ -224,18 +224,27 @@ for sample, files in groups.items():
     # Average across chunks (to keep values in relative abundance scale)
     #merged_df = merged_df.mean(axis=1).to_frame(name=sample)
 
+     # Write back with MetaPhlAn headers
+    print("Writing sum of merged chunks to {merged_chunk_dir}")
     out_path = os.path.join(merged_chunks_dir, f"{sample}_profile.txt")
-    merged_df.to_csv(out_path, sep="\t")
-    print(f"Merged {len(files)} chunks for sample {sample} → {out_path}")
+    with open(out_path, "w") as out:
+        out.write(f"#SampleID\tMetaphlan_Analysis\n")
+        out.write(f"#clade_name\tNCBI_tax_id\trelative_abundance\n")
+        merged_df.to_csv(out, sep="\t")
+        
+"""
+#merging all metaphlan output sample tbls:
+merge_sample_dir = os.path.join(taxa_prac, "all_sample_merged_file.txt") #out
+merged_chunks_dir=os.path.join(taxa_prac, "merge")
+merge_all_samp=[]
+for filename in os.listdir(merged_chunks_dir):
+   if filename.endswith(".txt"):
+      merge_samp=os.path.join(merged_chunks_dir, filename)
+      merge_all_samp.append(merge_samp)
+      print(f"Merging MetaPhlan all sample counts from {merge_samp}")
+print(*merge_all_samp)
 
-"""
-#need to merge chunk before merge metaphlan + test them out
-#merging metaphlan output tbls:
-merge_metaphlan = os.path.join(taxa_prof_dir, "merged_file.txt")
 subprocess.run([
-    "merge_metaphlan_tables.py",
-    *[os.path.join(taxa_prof_dir, f) for f in os.listdir(taxa_prof_dir) if f.endswith("_profile.txt")],
-    "--o", merge_metaphlan
-], check=True)
-"""
+     "merge_metaphlan_tables.py", *merge_all_samp,
+     "-o", merge_sample_dir], check=True)
 
