@@ -207,22 +207,27 @@ merged_chunks_dir="metaphlan_dir_cp/merge"
 os.makedirs(merged_chunks_dir, exist_ok=True)
 
 groups = defaultdict(list)
-for filename in os.listdir(taxa_prac):
-    if "_chunk_" in filename:
-        sample_id = filename.split("_chunk_")[0]  # part before "_chunk_"
-        groups[sample_id].append(filename)
+for f in os.listdir(taxa_prac):
+    if f.endswith("_profile.txt") and "_chunk_" in f:
+        sample = f.split("_chunk_")[0]
+        groups[sample].append(os.path.join(taxa_prac, f))
 
-# Print groups with multiple chunks
 for sample, files in groups.items():
     dfs = []
     for f in files:
-        df = pd.read_csv(f, sep="\t", index_col=0)
+        df = pd.read_csv(f, sep="\t", index_col=0, comment="#")
         dfs.append(df)
-    merged_df = sum(dfs)  # element-wise sum of abundances
+
+    # Concatenate along columns (each chunk as a column)
+    merged_df = pd.concat(dfs, axis=1)
+
+    # Average across chunks (to keep values in relative abundance scale)
+    #merged_df = merged_df.mean(axis=1).to_frame(name=sample)
+
     out_path = os.path.join(merged_chunks_dir, f"{sample}_profile.txt")
     merged_df.to_csv(out_path, sep="\t")
     print(f"Merged {len(files)} chunks for sample {sample} → {out_path}")
-                
+
 """
 #need to merge chunk before merge metaphlan + test them out
 #merging metaphlan output tbls:
