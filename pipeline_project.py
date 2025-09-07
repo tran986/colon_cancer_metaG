@@ -109,6 +109,7 @@ for filename in os.listdir(out_dir):
     "--html", filepath_out + ".html"])
    """
 
+"""
 
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
 #splitting into chunks:-in order to run in local machine with low RAM:
@@ -204,8 +205,7 @@ for filename in os.listdir(tmp_dir):
 #merge chunks for each sample:
 
 #taxa_prac="metaphlan_dir_cp"
-merged_chunks_dir=os.path.join(taxa_prof_dir,"merge")
-print(merged_chunks_dir)
+merged_chunks_dir=os.path.join(taxa_prof_dir, "merge")
 os.makedirs(merged_chunks_dir, exist_ok=True)
 
 groups = defaultdict(list)
@@ -250,3 +250,18 @@ subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
      "-o", merge_sample_dir], check=True)
 
+"""
+
+#------------------------------------------------S4 ANALYZING COUNT OUTPUTS:
+
+taxa_prac="metaphlan_dir_cp"
+merge_sample_dir=os.path.join(taxa_prac, "draft_merge.txt")
+lines = open(merge_sample_dir).readlines()
+with open(merge_sample_dir, 'w') as f:
+    f.writelines(lines[1:])
+
+
+"""
+count_tbl=pd.read_csv(merge_sample_dir, sep="|")
+print(count_tbl.head)
+"""
