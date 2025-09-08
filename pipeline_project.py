@@ -5,7 +5,7 @@ import random
 import os
 from collections import defaultdict
 import subprocess
-#import multiqc
+import multiqc
 import shutil
 import gzip
 from glob import glob
@@ -75,11 +75,10 @@ os.makedirs(qc_dir, exist_ok=True)
 for filename in os.listdir(out_dir):
    filepath=os.path.join(out_dir, filename)
    print(f"running QC on {filename} to {filepath}") #run fastqc
-   """
    subprocess.run(                             
    ["fastqc", filepath, "-o", qc_dir]
    )
-   """
+
 
 #--------MULTIQC:
 multiqc_dir = "multiqc_dir"
@@ -101,15 +100,13 @@ for filename in os.listdir(out_dir):
    filepath_in=os.path.join(out_dir, filename)
    filepath_out=os.path.join(trimmed_dir, filename)
    print(f"trimming {filepath_in} to {filepath_out}")   #run fastp
-   """
     subprocess.run([
     "fastp",
     "-i", filepath_in,
     "-o", filepath_out,
     "--html", filepath_out + ".html"])
-   """
 
-"""
+
 
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
 #splitting into chunks:-in order to run in local machine with low RAM:
@@ -246,11 +243,13 @@ for filename in os.listdir(merged_chunks_dir):
       print(f"Merging MetaPhlan all sample counts from {merge_samp}")
 print(*merge_all_samp)
 
+
 subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
      "-o", merge_sample_dir], check=True)
 
-"""
+
+
 
 #------------------------------------------------S4 ANALYZING COUNT OUTPUTS:
 
@@ -261,7 +260,42 @@ with open(merge_sample_dir, 'w') as f:
     f.writelines(lines[1:])
 
 
-"""
 count_tbl=pd.read_csv(merge_sample_dir, sep="|")
 print(count_tbl.head)
-"""
+
+def read_metaphlan_output(filepath):
+    
+    #Reads a MetaPhlAn output .txt file and returns a dictionary
+    #containing taxonomic classifications and their relative abundances.
+    data = {}
+    with open(filepath, 'r') as f:
+        for line in f:
+            # Skip comment lines which usually start with '#'
+            if line.startswith('#'):
+                continue
+            
+            # Split the line by tab to separate columns
+            parts = line.strip().split('\t')
+            
+            # MetaPhlAn output typically has taxonomic classification in the first column
+            # and relative abundance in the second (or a later) column.
+            # Adjust index based on the specific MetaPhlAn output format if needed.
+            if len(parts) >= 2:
+                taxonomy = parts[0]
+                try:
+                    abundance = float(parts[1])
+                    data[taxonomy] = abundance
+                except ValueError:
+                    # Handle cases where abundance might not be a valid number
+                    print(f"Warning: Could not convert abundance to float for '{taxonomy}'")
+                    continue
+    return data
+
+# Example usage:
+file_path = 'your_metaphlan_output.txt' # Replace with your actual file path
+metaphlan_data = read_metaphlan_output(file_path)
+
+# Print some of the loaded data
+for taxon, abundance in list(metaphlan_data.items())[:5]: # Print first 5 entries
+    print(f"Taxon: {taxon}, Abundance: {abundance}")
+
