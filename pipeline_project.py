@@ -5,7 +5,7 @@ import random
 import os
 from collections import defaultdict
 import subprocess
-import multiqc
+#import multiqc
 import shutil
 import gzip
 from glob import glob
@@ -68,6 +68,7 @@ print(metadata_samp)
 
 qc_dir = "fastqc_dir"
 print(os.listdir(out_dir))
+"""
 
 #create qc_dir before running fastqc:
 os.makedirs(qc_dir, exist_ok=True)
@@ -100,12 +101,10 @@ for filename in os.listdir(out_dir):
    filepath_in=os.path.join(out_dir, filename)
    filepath_out=os.path.join(trimmed_dir, filename)
    print(f"trimming {filepath_in} to {filepath_out}")   #run fastp
-    subprocess.run([
-    "fastp",
+   subprocess.run(["fastp",
     "-i", filepath_in,
     "-o", filepath_out,
     "--html", filepath_out + ".html"])
-
 
 
 #------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
@@ -189,7 +188,7 @@ for filename in os.listdir(tmp_dir):
       output_txt=filename.replace(".fastq.gz","_profile.txt")
       output_path=os.path.join(taxa_prof_dir,output_txt)
       print(f"profilling taxa in chunk {input_path} to {output_path}")
-      subprocess.run(["metaphlan",
+            subprocess.run(["metaphlan",
                       input_path,
                       "--input_type", "fastq", 
                       "--nproc", "1",
@@ -199,9 +198,12 @@ for filename in os.listdir(tmp_dir):
                       ], check=True) #change dir to the db
       
 
+"""  
+
 #merge chunks for each sample:
 
 #taxa_prac="metaphlan_dir_cp"
+"""
 merged_chunks_dir=os.path.join(taxa_prof_dir, "merge")
 os.makedirs(merged_chunks_dir, exist_ok=True)
 
@@ -243,59 +245,15 @@ for filename in os.listdir(merged_chunks_dir):
       print(f"Merging MetaPhlan all sample counts from {merge_samp}")
 print(*merge_all_samp)
 
-
 subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
      "-o", merge_sample_dir], check=True)
-
-
-
+"""
 
 #------------------------------------------------S4 ANALYZING COUNT OUTPUTS:
-
 taxa_prac="metaphlan_dir_cp"
-merge_sample_dir=os.path.join(taxa_prac, "draft_merge.txt")
-lines = open(merge_sample_dir).readlines()
-with open(merge_sample_dir, 'w') as f:
-    f.writelines(lines[1:])
-
-
-count_tbl=pd.read_csv(merge_sample_dir, sep="|")
-print(count_tbl.head)
-
-def read_metaphlan_output(filepath):
-    
-    #Reads a MetaPhlAn output .txt file and returns a dictionary
-    #containing taxonomic classifications and their relative abundances.
-    data = {}
-    with open(filepath, 'r') as f:
-        for line in f:
-            # Skip comment lines which usually start with '#'
-            if line.startswith('#'):
-                continue
-            
-            # Split the line by tab to separate columns
-            parts = line.strip().split('\t')
-            
-            # MetaPhlAn output typically has taxonomic classification in the first column
-            # and relative abundance in the second (or a later) column.
-            # Adjust index based on the specific MetaPhlAn output format if needed.
-            if len(parts) >= 2:
-                taxonomy = parts[0]
-                try:
-                    abundance = float(parts[1])
-                    data[taxonomy] = abundance
-                except ValueError:
-                    # Handle cases where abundance might not be a valid number
-                    print(f"Warning: Could not convert abundance to float for '{taxonomy}'")
-                    continue
-    return data
-
-# Example usage:
-file_path = 'your_metaphlan_output.txt' # Replace with your actual file path
-metaphlan_data = read_metaphlan_output(file_path)
-
-# Print some of the loaded data
-for taxon, abundance in list(metaphlan_data.items())[:5]: # Print first 5 entries
-    print(f"Taxon: {taxon}, Abundance: {abundance}")
+merge_file_path=os.path.join(taxa_prac, "draft_merge.txt") # Replace with actual file path
+# Read the MetaPhlAn table
+df_count = pd.read_csv(merge_file_path, sep="\t")
+print(df_count.columns) #Index(['clade_name', 'NCBI_tax_id', 'ERR688431_profile', 'ERR688467_profile', 'ERR688483_profile']
 
