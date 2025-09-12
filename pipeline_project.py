@@ -11,7 +11,7 @@ from glob import glob
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
-
+"""
 seq_info = pd.read_csv("/Users/Nghitran/Desktop/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 #seq_info = pd.read_csv("/mnt/c/Users/Nia Tran/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 
@@ -250,10 +250,12 @@ subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
      "-o", merge_sample_path], check=True)
 
-
+"""
 #------------------------------------------------S4 READ INTO COUNT OUTPUTS:
 #merge_file_path=os.path.join(merge_sample_dir, "all_sample_merged_file.txt") # Replace with actual file path
 # Read the MetaPhlAn table
+merge_sample_path=os.path.join("metaphlan_dir", "all_sample_merged_file.txt")
+
 df_count_out = pd.read_csv(merge_sample_path, sep="\t", comment="#")
 print(df_count_out.columns) #Index(['clade_name', 'NCBI_tax_id', 'ERR688431_profile', 'ERR688467_profile', 'ERR688483_profile']
 
@@ -268,8 +270,20 @@ print(accession)
 seq_info = pd.read_csv("/Users/Nghitran/Desktop/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 seq_info_short=seq_info[["run_accession","sample_title"]]
 seq_info_filter=seq_info_short[seq_info_short["run_accession"].isin(accession)] #condition of all the profile samples
-print(seq_info_filter)
+print(f"getting the sample's condition from metadata {seq_info_filter}")
 
-#------------------------------------------------S5 APPLY NORMALIZATION (Compositionally add up to 1):
+#------------------------------------------------S5 APPLY NORMALIZATION (Compositionally add up to 1) BEFORE TRANSPOSE:
+profile_count=df_count_out.filter(regex='profile')
+df_normalized=profile_count.div(profile_count.sum(axis=0), axis=1)
+print(df_normalized)
+
+# New column as a list/Series
+taxa_col = df_count_out.clade_name
+df_normalized.insert(0, 'taxa', taxa_col)
+print(f'printing normalized data: {df_normalized}')
+
+#separate taxa into k__, p__, c__,...
+
+
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
