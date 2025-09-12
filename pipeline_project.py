@@ -5,7 +5,7 @@ import random
 import os
 from collections import defaultdict
 import subprocess
-#import multiqc
+import multiqc
 import shutil
 import gzip
 from glob import glob
@@ -13,7 +13,7 @@ from glob import glob
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
 
-seq_info = pd.read_csv("/Users/Nghitran/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
+seq_info = pd.read_csv("/Users/Nghitran/Desktop/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 #seq_info = pd.read_csv("/mnt/c/Users/Nia Tran/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 
 #access sample ID from metadata:
@@ -33,7 +33,7 @@ c = ["Stool sample from controls",
 combined_url=[]
 for i in c:
     fastq_ftp = seq_single[seq_single["sample_title"] == i]["fastq_ftp"]
-    all_url=random.sample(fastq_ftp.tolist(), 1) #changes this if need more/less samples
+    all_url=random.sample(fastq_ftp.tolist(), 5) #changes this if need more/less samples
     combined_url.extend(all_url)
 
 # Directory to save files - Dowloads
@@ -46,7 +46,7 @@ for url in combined_url:
     url = "https://" + url
     filepath = os.path.join(out_dir, filename)
     print(f"Downloading {url} -> {filepath}")
-    #urllib.request.urlretrieve(url, filepath)    #download fastq seq
+    urllib.request.urlretrieve(url, filepath)    #download fastq seq
 
 #make a metadata for downstream analysis later on:
 metadata_samp = seq_info[seq_info["fastq_ftp"].isin(combined_url)][["run_accession","sample_title"]]
@@ -68,7 +68,6 @@ print(metadata_samp)
 
 qc_dir = "fastqc_dir"
 print(os.listdir(out_dir))
-"""
 
 #create qc_dir before running fastqc:
 os.makedirs(qc_dir, exist_ok=True)
@@ -80,17 +79,16 @@ for filename in os.listdir(out_dir):
    ["fastqc", filepath, "-o", qc_dir]
    )
 
-
 #--------MULTIQC:
-multiqc_dir = "multiqc_dir"
-#multiqc.run(qc_dir, "-o", multiqc_dir)            #run multiqc
+#multiqc_dir = "multiqc_dir"
+#os.makedirs(multiqc, exist_ok=True)
+multiqc.run(qc_dir)            #run multiqc
 
 #remove fastqc/multiqc dir after multiqc results are generated:
-#shutil.rmtree(qc_dir)
+shutil.rmtree(qc_dir)
 print(f"{qc_dir} has been removed to clear disk space")
-#shutil.rmtree(multiqc_dir)
-print(f"{multiqc_dir} has been remove to clear disk space")
-
+shutil.rmtree("multiqc_data")
+print("multiqc_data has been remove to clear disk space")
 
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
@@ -106,8 +104,8 @@ for filename in os.listdir(out_dir):
     "-o", filepath_out,
     "--html", filepath_out + ".html"])
 
-
-#------------------------------------------------S3 RUN METAPHLAN 4 FOR TAXA PROFILING :
+#------------------------------------------------S3 RUN METAPHLAN3 
+# FOR TAXA PROFILING :
 #splitting into chunks:-in order to run in local machine with low RAM:
 tmp_dir="fastq_chunks"
 
@@ -165,7 +163,6 @@ for filename in os.listdir(tmp_dir):
     else:
         print(f"Already gzipped: {filename}")
 
-
 #run "rm *.fastq" if there are replicates:
 for filename in os.listdir(tmp_dir):
     if filename.endswith(".fastq"):
@@ -174,7 +171,6 @@ for filename in os.listdir(tmp_dir):
         print(f"Delete {filename} because of unzipp")
 
 #run Metaphlan3:
-
 taxa_prof_dir = "metaphlan_dir"
 os.makedirs(taxa_prof_dir, exist_ok=True)
 
@@ -188,22 +184,15 @@ for filename in os.listdir(tmp_dir):
       output_txt=filename.replace(".fastq.gz","_profile.txt")
       output_path=os.path.join(taxa_prof_dir,output_txt)
       print(f"profilling taxa in chunk {input_path} to {output_path}")
-            subprocess.run(["metaphlan",
-                      input_path,
-                      "--input_type", "fastq", 
-                      "--nproc", "1",
-                      "--bowtie2db", "/Users/Nghitran/colon_cancer_metaG/metaphlan_database", #"--bowtie2db "/home/tran986/mp_database_new"
-                      "--index", "mpa_v31_CHOCOPhlAn_201901",
-                      "-o", output_path  
-                      ], check=True) #change dir to the db
+      subprocess.run(["metaphlan",input_path,
+        "--input_type", "fastq", 
+        "--nproc", "1",
+        "--bowtie2db", "/Users/Nghitran/colon_cancer_metaG/metaphlan_database", #"--bowtie2db "/home/tran986/mp_database_new"
+        "--index", "mpa_v31_CHOCOPhlAn_201901",
+        "-o", output_path], check=True) #change dir to the db
       
-
-"""  
-
+ 
 #merge chunks for each sample:
-
-#taxa_prac="metaphlan_dir_cp"
-"""
 merged_chunks_dir=os.path.join(taxa_prof_dir, "merge")
 os.makedirs(merged_chunks_dir, exist_ok=True)
 
@@ -236,7 +225,7 @@ for sample, files in groups.items():
         merged_df.to_csv(out, sep="\t")
   
 #merging all metaphlan output sample tbls:
-merge_sample_dir = os.path.join(taxa_prof_dir, "all_sample_merged_file.txt") #out
+merge_sample_path = os.path.join(taxa_prof_dir, "all_sample_merged_file.txt") #out
 merge_all_samp=[]
 for filename in os.listdir(merged_chunks_dir):
    if filename.endswith(".txt"):
@@ -247,13 +236,11 @@ print(*merge_all_samp)
 
 subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
-     "-o", merge_sample_dir], check=True)
-"""
+     "-o", merge_sample_path], check=True)
 
 #------------------------------------------------S4 ANALYZING COUNT OUTPUTS:
-taxa_prac="metaphlan_dir_cp"
-merge_file_path=os.path.join(taxa_prac, "draft_merge.txt") # Replace with actual file path
+#merge_file_path=os.path.join(merge_sample_dir, "all_sample_merged_file.txt") # Replace with actual file path
 # Read the MetaPhlAn table
-df_count = pd.read_csv(merge_file_path, sep="\t")
-print(df_count.columns) #Index(['clade_name', 'NCBI_tax_id', 'ERR688431_profile', 'ERR688467_profile', 'ERR688483_profile']
+df_count_out = pd.read_csv(merge_sample_path, sep="\t")
+print(df_count_out.columns) #Index(['clade_name', 'NCBI_tax_id', 'ERR688431_profile', 'ERR688467_profile', 'ERR688483_profile']
 
