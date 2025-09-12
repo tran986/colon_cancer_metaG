@@ -11,7 +11,7 @@ from glob import glob
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
-"""
+
 seq_info = pd.read_csv("/Users/Nghitran/Desktop/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 #seq_info = pd.read_csv("/mnt/c/Users/Nia Tran/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 
@@ -79,24 +79,22 @@ for filename in os.listdir(out_dir):
    subprocess.run(                             
    ["fastqc", filepath, "-o", qc_dir])
    
-"""
-
 #--------MULTIQC:
-#multiqc_dir = "multiqc_dir"
-#os.makedirs(multiqc, exist_ok=True)
-#multiqc.run(qc_dir)            #run multiqc
+multiqc_dir = "multiqc_dir"
+os.makedirs(multiqc, exist_ok=True)
+multiqc.run(qc_dir)            #run multiqc
 
 #remove fastqc/multiqc dir after multiqc results are generated:
-#shutil.rmtree(qc_dir)
-#print(f"{qc_dir} has been removed to clear disk space")
-#shutil.rmtree("multiqc_data")
+shutil.rmtree(qc_dir)
+print(f"{qc_dir} has been removed to clear disk space")
+shutil.rmtree("multiqc_data")
 #print("multiqc_data has been remove to clear disk space")
 
 #--------FASTP for trimming
 trimmed_dir = "fastp_dir"
 #create trimmed_dir before trimming:
 os.makedirs(trimmed_dir, exist_ok=True)
-"""
+
 for filename in os.listdir(out_dir):
    filepath_in=os.path.join(out_dir, filename)
    filepath_out=os.path.join(trimmed_dir, filename)
@@ -105,7 +103,7 @@ for filename in os.listdir(out_dir):
     "-i", filepath_in,
     "-o", filepath_out,
     "--html", filepath_out + ".html"])
-"""
+
    
 #------------------------------------------------S3 RUN METAPHLAN3 
 # FOR TAXA PROFILING :
@@ -116,7 +114,7 @@ os.makedirs(tmp_dir, exist_ok=True)
 
 lines_per_chunk = 4_000_000  
 nproc = 1
-"""
+
 print("Splitting FASTQ into smaller chunks...")
 for filename in os.listdir(trimmed_dir):
     if filename.endswith(".fastq.gz"):
@@ -173,7 +171,6 @@ for filename in os.listdir(tmp_dir):
         os.remove(filepath)
         print(f"Delete {filename} because of unzipp")
 
-"""
 
 #run Metaphlan3:
 taxa_prof_dir = "metaphlan_dir"
@@ -189,19 +186,17 @@ for filename in os.listdir(tmp_dir):
       output_txt=filename.replace(".fastq.gz","_profile.txt")
       output_path=os.path.join(taxa_prof_dir,output_txt)
       print(f"profilling taxa in chunk {input_path} to {output_path}")
-      """
       subprocess.run(["metaphlan",input_path,
         "--input_type", "fastq", 
         "--nproc", "1",
         "--bowtie2db", "/Users/Nghitran/colon_cancer_metaG/metaphlan_database", #"--bowtie2db "/home/tran986/mp_database_new"
         "--index", "mpa_v31_CHOCOPhlAn_201901",
         "-o", output_path], check=True) #change dir to the db
-      """
 
 #merge chunks for each sample:
 merged_chunks_dir=os.path.join(taxa_prof_dir, "merge")
 os.makedirs(merged_chunks_dir, exist_ok=True)
-"""
+
 groups = defaultdict(list)
 for f in os.listdir(taxa_prof_dir):
     if f.endswith("_profile.txt") and "_chunk_" in f:
@@ -239,10 +234,10 @@ for sample, files in groups.items():
         out.write(f"#SampleID\tMetaphlan_Analysis\n")
         out.write(f"#clade_name\tNCBI_tax_id\trelative_abundance\n")
         merged_df.to_csv(out, sep="\t", index=False, header=False)
-"""
+
 #merging all metaphlan output sample tbls:
 merge_sample_path = os.path.join(taxa_prof_dir, "all_sample_merged_file.txt") #out
-"""
+
 merge_all_samp=[]
 for filename in os.listdir(merged_chunks_dir):
    if filename.endswith(".txt"):
@@ -254,9 +249,9 @@ print(*merge_all_samp)
 subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
      "-o", merge_sample_path], check=True)
-"""
 
-#------------------------------------------------S4 ANALYZING COUNT OUTPUTS:
+
+#------------------------------------------------S4 READ INTO COUNT OUTPUTS:
 #merge_file_path=os.path.join(merge_sample_dir, "all_sample_merged_file.txt") # Replace with actual file path
 # Read the MetaPhlAn table
 df_count_out = pd.read_csv(merge_sample_path, sep="\t", comment="#")
@@ -275,4 +270,6 @@ seq_info_short=seq_info[["run_accession","sample_title"]]
 seq_info_filter=seq_info_short[seq_info_short["run_accession"].isin(accession)] #condition of all the profile samples
 print(seq_info_filter)
 
-
+#------------------------------------------------S5 APPLY NORMALIZATION (Compositionally add up to 1):
+#------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
+#------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
