@@ -277,13 +277,19 @@ profile_count=df_count_out.filter(regex='profile')
 df_normalized=profile_count.div(profile_count.sum(axis=0), axis=1)
 print(df_normalized)
 
-# New column as a list/Series
+#add taxa col in the front of profile count:
 taxa_col = df_count_out.clade_name
 df_normalized.insert(0, 'taxa', taxa_col)
 print(f'printing normalized data: {df_normalized}')
 
-#separate taxa into k__, p__, c__,...
+#separate taxa col into k__, p__, c__,...
+split_normalized_df= df_normalized['taxa'].str.split('|', expand=True)
+print("\nSplit data (intermediate DataFrame):")
+print(split_normalized_df)
+split_normalized_df.columns = ['Domain', 'Phylum', 'Clade', 'Order', 'Family', 'Genus', 'Species']
+print(split_normalized_df.tail)
 
+#look at the species level first (filter out None in Species level):
 
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
