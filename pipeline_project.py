@@ -1,6 +1,7 @@
 import urllib.request
 import pandas as pd
 import random
+import numpy as np
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -11,6 +12,7 @@ import subprocess
 import multiqc
 import shutil
 import gzip
+import statsmodels.formula.api as smf
 from glob import glob
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
@@ -276,7 +278,7 @@ seq_info_short=seq_info[["run_accession","sample_title"]]
 seq_info_filter=seq_info_short[seq_info_short["run_accession"].isin(accession)] #CONDITIONS OF ALL THE SAMPLES USED
 print(f"getting the sample's condition from metadata {seq_info_filter}")
 
-#------------------------------------------------S5 APPLY NORMALIZATION (Compositionally add up to 1) BEFORE TRANSPOSE:
+#------------------------------------------------S5 APPLY NORMALIZATION (Compositionally add up to 1) AND CREATE HEATMAP:
 profile_count=df_count_out.filter(regex='profile')
 df_normalized=profile_count.div(profile_count.sum(axis=0), axis=1)
 print(df_normalized)
@@ -298,7 +300,6 @@ print(f"splited df: {df_normalized_fix}")
 print("filtering Null species:")
 df_species=df_normalized_fix[df_normalized_fix['Species'].notnull()]
 df_species=df_species.loc[:, ['Species'] + df_species.columns[df_species.columns.str.contains('ERR')].tolist()]
-
 
 #---make a heatmap (on normalized data)
 t = [item + "_profile" for item in seq_info_filter.run_accession.tolist()] #make the run_accession column matched with "ERR.._profile"
@@ -339,10 +340,46 @@ hm_normalized_species.ax_col_dendrogram.legend(
 )
 plt.show()
 
-"""
-"""
-#transpose data:
-
-
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
+#transpose data:
+print(seq_info_filter)
+print(df_species)
+#pivot_longer the df_species: pivot_longer(col=!Species, names_to=sample, values_to=count)
+df_species_longer=df_species.melt(id_vars='Species', 
+                                  var_name='sample', 
+                                  value_name='count')
+
+#merge with condition:
+df_species_merge=pd.merge(seq_info_filter, df_species_longer, on='sample', how='inner')
+print(df_species_merge)
+
+#fit linear model: --nolog:
+model = smf.ols("count ~ sample_title + Species", data=df_species_merge).fit()
+print(model.summary())
+summary_df = pd.DataFrame({
+    'term': model.params.index,
+    'estimate': model.params.values,
+    'p_value': model.pvalues.values,
+    'std_err': model.bse.values,
+    't_value': model.tvalues.values
+})
+#fit linear model -- log of relative abundance: result yields more hits due to compositionality problem addressed
+df_species_merge["log_count"]=np.log1p(df_species_merge["count"])
+model_log=smf.ols("log_count ~ sample_title + Species", data=df_species_merge).fit()
+print(model_log.summary())
+
+summary_df_log = pd.DataFrame({
+    'term': model_log.params.index,
+    'estimate': model_log.params.values,
+    'p_value': model_log.pvalues.values,
+    'std_err': model_log.bse.values,
+    't_value': model_log.tvalues.values
+})
+print(summary_df)
+print(summary_df_log)
+
+#filter significant species (alpha level 0.05)
+significant_tax_log=summary_df_log[summary_df_log.p_value <= 0.05]
+print(significant_tax_log)
+
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
