@@ -2,6 +2,9 @@ import urllib.request
 import pandas as pd
 import random
 import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from collections import defaultdict
 import subprocess
 import multiqc
@@ -269,7 +272,7 @@ print(accession)
 
 seq_info = pd.read_csv("/Users/Nghitran/Desktop/colon_cancer_metaG/CRC_seq_info.txt", sep="\t")
 seq_info_short=seq_info[["run_accession","sample_title"]]
-seq_info_filter=seq_info_short[seq_info_short["run_accession"].isin(accession)] #condition of all the profile samples
+seq_info_filter=seq_info_short[seq_info_short["run_accession"].isin(accession)] #CONDITIONS OF ALL THE SAMPLES USED
 print(f"getting the sample's condition from metadata {seq_info_filter}")
 
 #------------------------------------------------S5 APPLY NORMALIZATION (Compositionally add up to 1) BEFORE TRANSPOSE:
@@ -284,12 +287,48 @@ print(f'printing normalized data: {df_normalized}')
 
 #separate taxa col into k__, p__, c__,...
 split_normalized_df= df_normalized['taxa'].str.split('|', expand=True)
-print("\nSplit data (intermediate DataFrame):")
-print(split_normalized_df)
+print("\nSpliting data (intermediate DataFrame):")
 split_normalized_df.columns = ['Domain', 'Phylum', 'Clade', 'Order', 'Family', 'Genus', 'Species']
-print(split_normalized_df.tail)
+df_normalized = pd.concat([df_normalized, split_normalized_df], axis=1)
+df_normalized_fix=df_normalized.iloc[:, 1:len(df_normalized.columns)]
+print(f"splited df: {df_normalized_fix}")
 
 #look at the species level first (filter out None in Species level):
+print("filtering Null species:")
+df_species=df_normalized_fix[df_normalized_fix['Species'].notnull()]
+df_species=df_species.loc[:, ['Species'] + df_species.columns[df_species.columns.str.contains('ERR')].tolist()]
+print(df_species)
+df_species = df_species.set_index('Species')
+
+#---make a heatmap (on normalized data)
+t = [item + "_profile" for item in seq_info_filter.run_accession.tolist()] #make the run_accession column matched with "ERR.._profile"
+seq_info_filter.loc[:, 'sample'] = t
+cond_dict = dict(zip(seq_info_filter['sample'], seq_info_filter['sample_title'])) #convert 2 columns into a dict
+sample_cond_gr=pd.Series(cond_dict).reindex(df_species.columns)
+group_colors = sample_cond_gr.map({'Stool sample from controls': 'skyblue', 
+                                   'Stool sample from advanced adenoma': 'salmon', 
+                                   'Stool sample from carcinoma': 'red'})
+
+hm_normalized_species=sns.clustermap(
+    df_species,
+    col_colors=group_colors,
+    cmap="viridis",
+    figsize=(6,4)
+)
+
+handles = [
+    mpatches.Patch(color='skyblue', label='controls'),
+    mpatches.Patch(color='salmon', label='advanced adenoma'),
+    mpatches.Patch(color='red', label='carcinoma')
+]
+hm_normalized_species.ax_col_dendrogram.legend(
+    handles=handles, 
+    loc='center', 
+    ncol=3, 
+    bbox_to_anchor=(0.5, 1.1)
+)
+plt.show()
+#transpose data:
 
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
