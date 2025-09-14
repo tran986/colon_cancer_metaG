@@ -5,6 +5,7 @@ import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from scipy.cluster.hierarchy import linkage
 from collections import defaultdict
 import subprocess
 import multiqc
@@ -297,23 +298,32 @@ print(f"splited df: {df_normalized_fix}")
 print("filtering Null species:")
 df_species=df_normalized_fix[df_normalized_fix['Species'].notnull()]
 df_species=df_species.loc[:, ['Species'] + df_species.columns[df_species.columns.str.contains('ERR')].tolist()]
-print(df_species)
-df_species = df_species.set_index('Species')
+
 
 #---make a heatmap (on normalized data)
 t = [item + "_profile" for item in seq_info_filter.run_accession.tolist()] #make the run_accession column matched with "ERR.._profile"
 seq_info_filter.loc[:, 'sample'] = t
 cond_dict = dict(zip(seq_info_filter['sample'], seq_info_filter['sample_title'])) #convert 2 columns into a dict
 sample_cond_gr=pd.Series(cond_dict).reindex(df_species.columns)
-group_colors = sample_cond_gr.map({'Stool sample from controls': 'skyblue', 
-                                   'Stool sample from advanced adenoma': 'salmon', 
-                                   'Stool sample from carcinoma': 'red'})
+group_colors = sample_cond_gr.map({'Stool sample from controls': "skyblue", 
+                                   'Stool sample from advanced adenoma': "salmon", 
+                                   'Stool sample from carcinoma': "red"})
+
+#sort
+df_species_sorted = df_species[sample_cond_gr.sort_values().index]
+group_colors_sorted = group_colors[sample_cond_gr.sort_values().index]
+
+df_species_sorted = df_species_sorted.set_index('Species')
 
 hm_normalized_species=sns.clustermap(
-    df_species,
-    col_colors=group_colors,
+    df_species_sorted,
+    col_colors=group_colors_sorted,
     cmap="viridis",
-    figsize=(6,4)
+    vmin=0.003,
+    vmax=0.05,
+    row_cluster=True,
+    col_cluster=False,
+    figsize=(7,6)
 )
 
 handles = [
@@ -325,10 +335,14 @@ hm_normalized_species.ax_col_dendrogram.legend(
     handles=handles, 
     loc='center', 
     ncol=3, 
-    bbox_to_anchor=(0.5, 1.1)
+    bbox_to_anchor=(1.1, 0.72)
 )
 plt.show()
+
+"""
+"""
 #transpose data:
+
 
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
