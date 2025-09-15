@@ -14,6 +14,7 @@ import shutil
 import gzip
 import statsmodels.formula.api as smf
 from glob import glob
+import plotly.graph_objs as go
 from tabulate import tabulate
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
@@ -390,6 +391,25 @@ print(t)
 
 significant_tax_log["species"]=t
 #export significant result:
-
 print(tabulate(significant_tax_log[["species","estimate","p_value","std_err","t_value"]].reset_index(drop=True), headers='keys', tablefmt='psql'))
+
+#--make a graph showing changes for these species 
+print((significant_tax_log.species)) #17
+#try for 1"
+#print(df_species_merge)
+#print(df_species_merge[df_species_merge["Species"]=="s__Akkermansia_muciniphila"])
+bar=sns.barplot(x='sample_title', 
+            y='count', 
+            data=df_species_merge[df_species_merge["Species"]=="s__Akkermansia_muciniphila"],
+            estimator="mean",
+            errorbar="sd",
+            capsize=0.2,
+            order=['Stool sample from controls','Stool sample from advanced adenoma','Stool sample from carcinoma',])
+bar.set_xticklabels(['Control', 'Advanced adenoma', 'Carcinoma'])
+plt.ylim(0, 0.025)
+plt.show()
+
+
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
+
+#------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
