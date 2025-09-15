@@ -405,8 +405,10 @@ bar=sns.barplot(x='sample_title',
             errorbar="sd",
             capsize=0.2,
             order=['Stool sample from controls','Stool sample from advanced adenoma','Stool sample from carcinoma',])
-bar.set_xticklabels(['Control', 'Advanced adenoma', 'Carcinoma'])
+bar.set_xticklabels(['Control', 'Advanced Adenoma', 'Carcinoma'])
 plt.ylim(0, 0.025)
+plt.xlabel("Sample Group")
+plt.ylabel("Count")
 plt.show()
 
 
