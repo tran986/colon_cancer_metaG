@@ -14,6 +14,7 @@ import shutil
 import gzip
 import statsmodels.formula.api as smf
 from glob import glob
+from tabulate import tabulate
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
@@ -341,9 +342,9 @@ hm_normalized_species.ax_col_dendrogram.legend(
 plt.show()
 
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
-#transpose data:
 print(seq_info_filter)
 print(df_species)
+
 #pivot_longer the df_species: pivot_longer(col=!Species, names_to=sample, values_to=count)
 df_species_longer=df_species.melt(id_vars='Species', 
                                   var_name='sample', 
@@ -381,5 +382,14 @@ print(summary_df_log)
 #filter significant species (alpha level 0.05)
 significant_tax_log=summary_df_log[summary_df_log.p_value <= 0.05]
 print(significant_tax_log)
+t=[]
+for i in significant_tax_log.term:
+   part=i.split(".")[1].rstrip("]")
+   t.append(part)
+print(t)
 
+significant_tax_log["species"]=t
+#export significant result:
+
+print(tabulate(significant_tax_log[["species","estimate","p_value","std_err","t_value"]].reset_index(drop=True), headers='keys', tablefmt='psql'))
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
