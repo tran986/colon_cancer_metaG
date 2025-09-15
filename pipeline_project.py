@@ -395,9 +395,7 @@ print(tabulate(significant_tax_log[["species","estimate","p_value","std_err","t_
 
 #--make a graph showing changes for these species 
 print((significant_tax_log.species)) #17
-#try for 1"
-#print(df_species_merge)
-#print(df_species_merge[df_species_merge["Species"]=="s__Akkermansia_muciniphila"])
+#try for 1:
 bar=sns.barplot(x='sample_title', 
             y='count', 
             data=df_species_merge[df_species_merge["Species"]=="s__Akkermansia_muciniphila"],
@@ -411,6 +409,21 @@ plt.xlabel("Sample Group")
 plt.ylabel("Count")
 plt.show()
 
+#bar plots for all 17 significant species:
+for s in significant_tax_log["species"]:
+   bar=sns.barplot(x='sample_title', 
+            y='count', 
+            data=df_species_merge[df_species_merge["Species"]==s],
+            estimator="mean",
+            errorbar="sd",
+            capsize=0.2,
+            order=['Stool sample from controls','Stool sample from advanced adenoma','Stool sample from carcinoma',])
+   bar.set_xticklabels(['Control', 'Advanced Adenoma', 'Carcinoma'])
+   plt.ylim(0, 0.03)
+   plt.xlabel("Sample Group")
+   plt.title(f"Normalized Count Across 3 Groups in {s}")
+   plt.ylabel("Count")
+   plt.show()
 
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
 
