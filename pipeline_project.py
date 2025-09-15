@@ -14,7 +14,6 @@ import shutil
 import gzip
 import statsmodels.formula.api as smf
 from glob import glob
-import plotly.graph_objs as go
 from tabulate import tabulate
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
@@ -395,21 +394,11 @@ print(tabulate(significant_tax_log[["species","estimate","p_value","std_err","t_
 
 #--make a graph showing changes for these species 
 print((significant_tax_log.species)) #17
-#try for 1:
-bar=sns.barplot(x='sample_title', 
-            y='count', 
-            data=df_species_merge[df_species_merge["Species"]=="s__Akkermansia_muciniphila"],
-            estimator="mean",
-            errorbar="sd",
-            capsize=0.2,
-            order=['Stool sample from controls','Stool sample from advanced adenoma','Stool sample from carcinoma',])
-bar.set_xticklabels(['Control', 'Advanced Adenoma', 'Carcinoma'])
-plt.ylim(0, 0.025)
-plt.xlabel("Sample Group")
-plt.ylabel("Count")
-plt.show()
 
-#bar plots for all 17 significant species:
+bar_col = {'Stool sample from controls': 'blue', 
+           'Stool sample from advanced adenoma': 'orange', 
+           'Stool sample from carcinoma': 'red'}
+
 for s in significant_tax_log["species"]:
    bar=sns.barplot(x='sample_title', 
             y='count', 
@@ -417,6 +406,7 @@ for s in significant_tax_log["species"]:
             estimator="mean",
             errorbar="sd",
             capsize=0.2,
+            palette=bar_col,
             order=['Stool sample from controls','Stool sample from advanced adenoma','Stool sample from carcinoma',])
    bar.set_xticklabels(['Control', 'Advanced Adenoma', 'Carcinoma'])
    plt.ylim(0, 0.03)
@@ -426,5 +416,6 @@ for s in significant_tax_log["species"]:
    plt.show()
 
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
+
 
 #------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
