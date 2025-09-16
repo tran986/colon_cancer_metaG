@@ -9,6 +9,8 @@ import matplotlib.patches as mpatches
 from scipy.cluster.hierarchy import linkage
 from collections import defaultdict
 import subprocess
+from skbio.diversity import beta_diversity
+from skbio.stats.distance import permanova, DistanceMatrix
 import multiqc
 import shutil
 import gzip
@@ -316,7 +318,7 @@ df_species_sorted = df_species[sample_cond_gr.sort_values().index]
 group_colors_sorted = group_colors[sample_cond_gr.sort_values().index]
 
 df_species_sorted = df_species_sorted.set_index('Species')
-
+"""
 hm_normalized_species=sns.clustermap(
     df_species_sorted,
     col_colors=group_colors_sorted,
@@ -340,6 +342,8 @@ hm_normalized_species.ax_col_dendrogram.legend(
     bbox_to_anchor=(1.1, 0.72)
 )
 plt.show()
+
+"""
 
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
 print(seq_info_filter)
@@ -398,7 +402,7 @@ print((significant_tax_log.species)) #17
 bar_col = {'Stool sample from controls': 'blue', 
            'Stool sample from advanced adenoma': 'orange', 
            'Stool sample from carcinoma': 'red'}
-
+"""
 for s in significant_tax_log["species"]:
    bar=sns.barplot(x='sample_title', 
             y='count', 
@@ -414,8 +418,38 @@ for s in significant_tax_log["species"]:
    plt.title(f"Normalized Count Across 3 Groups in {s}")
    plt.ylabel("Count")
    plt.show()
+"""
 
-#------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATION
+
+#------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATIONbc
+#bray curtis dis.
+df_species=df_species.set_index("Species")                     
+trans_df_species=df_species.T.sort_index(ascending=True)
+grouping_perma=seq_info_filter.sort_values(by='sample', ascending=True)
+
+bc_dis=beta_diversity(
+   metric="braycurtis",
+   counts=trans_df_species.values,
+   ids=trans_df_species.index
+)
+
+#PCoA or PERMANOVA:
+print(len(bc_dis.ids))
+print(grouping_perma['sample'])
+print(len(grouping_perma["sample_title"]))
+
+perma_res = permanova(
+    distance_matrix=bc_dis,
+    grouping=grouping_perma.sample_title.tolist(),
+    permutations=999
+)
+print(perma_res)
+
+
+
+
+
+
 
 
 #------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
