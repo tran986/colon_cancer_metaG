@@ -49,3 +49,5 @@
 | sample size            | 26                 |
 | number of groups       | 3                  |
 
+<img width="696" height="593" alt="Screenshot 2025-09-18 at 5 41 58 PM" src="https://github.com/user-attachments/assets/9838ed18-5dcb-4967-880f-7eca8b64aba3" />
+
