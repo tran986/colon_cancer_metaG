@@ -11,6 +11,7 @@ from collections import defaultdict
 import subprocess
 from skbio.diversity import beta_diversity
 from skbio.stats.distance import permanova, DistanceMatrix
+from skbio.stats.ordination import pcoa
 import multiqc
 import shutil
 import gzip
@@ -394,7 +395,7 @@ print(t)
 
 significant_tax_log["species"]=t
 #export significant result:
-print(tabulate(significant_tax_log[["species","estimate","p_value","std_err","t_value"]].reset_index(drop=True), headers='keys', tablefmt='psql'))
+print(tabulate(significant_tax_log[["species","estimate","p_value","std_err","t_value"]].reset_index(drop=True), headers=["Significant Species", ""], tablefmt="github"))
 
 #--make a graph showing changes for these species 
 print((significant_tax_log.species)) #17
@@ -443,13 +444,31 @@ perma_res = permanova(
     grouping=grouping_perma.sample_title.tolist(),
     permutations=999
 )
-print(perma_res)
 
+perma_sum=pd.DataFrame(perma_res[["method name","p-value","test statistic", "number of permutations", "sample size", "number of groups"]])
 
+#export a table of permanova res:
+table_perma = tabulate(perma_sum, headers=["PERMANOVA Results", ""], tablefmt="github")
+print(table_perma)
 
+#PCA:
+# Run PCoA on your distance matrix
+pcoa_res = pcoa(bc_dis)
+# Extract sample coordinates
+coords = pcoa_res.samples.iloc[:, :2]  # first 2 axes
+coords['group'] = grouping_perma.sample_title.values
 
+# Plot
+fig, ax = plt.subplots(figsize=(7,6))
 
+for group, df in coords.groupby('group'):
+    ax.scatter(df.iloc[:,0], df.iloc[:,1], label=group, s=60)
 
-
+ax.set_xlabel(f"PCoA1 ({pcoa_res.proportion_explained[0]*100:.1f}% variance)")
+ax.set_ylabel(f"PCoA2 ({pcoa_res.proportion_explained[1]*100:.1f}% variance)")
+ax.set_title("PCoA of Bray-Curtis distances\n(PERMANOVA tested group differences)")
+ax.legend()
+plt.tight_layout()
+plt.show()
 
 #------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
