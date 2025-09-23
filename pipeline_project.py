@@ -473,21 +473,53 @@ plt.show()
 
 #------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
 #assemble into contig:
-ena_fastq="ena_fastq"
-megahit_dir="megahit_dir"
-
+fastq_chunks = "fastq_chunks"
+megahit_dir = "megahit_dir"
 os.makedirs(megahit_dir, exist_ok=True)
 
-for filename in os.listdir(ena_fastq):
-   input_dir=os.path.join(ena_fastq, filename)
-   output_contig_fa=filename.replace(".fastq.gz","_contigs.fa")
-   output_dir=os.path.join(megahit_dir, output_contig_fa)
-   subprocess.run([
-      "megahit",
-      "-r", input_dir,
-      "-o", output_dir
-   ])
+for filename in os.listdir(fastq_chunks):
+    if not filename.endswith(".fastq.gz"):
+        continue
 
-#predict ORF:
+    input_file_gunzip = os.path.join(fastq_chunks, filename)
+    print(f"Gunzipping {input_file_gunzip}")
+    # Uncomment if you want to actually gunzip
+    subprocess.run(["gunzip", "-k", input_file_gunzip], check=True)
+
+    input_file = filename.replace(".fastq.gz", ".fastq")
+    input_dir = os.path.join(fastq_chunks, input_file)
+
+    output_dir_final = os.path.join(megahit_dir, filename.replace(".fastq.gz", ""))
+    print(f"Assembling {input_file} → {output_dir_final}")
+
+    subprocess.run([
+        "megahit",
+        "-r", input_dir,
+        "-o", output_dir_final,
+        "--min-contig-len", "500",
+        "--k-min", "21",
+        "--k-max", "49",
+        "--k-step", "8",
+        "--mem-flag", "0"
+    ], check=True)
+
+#predict ORF
+prodigal_dir="prodigal_dir"
+os.makedirs(prodigal_dir, exist_ok=True)
+
+for foldername in os.listdir(megahit_dir):
+   contig_fa=os.path.join(megahit_dir, foldername, "final.contigs.fa")
+   if not os.path.exists(contig_fa):
+        print(f"Skipping {foldername}, no contigs found")
+        continue
+   output_protein_faa = os.path.join(prodigal_dir, f"{foldername}_proteins.faa")
+   print(f"Predicting ORFs {contig_fa} → {output_protein_faa}")
+   subprocess.run([
+        "prodigal",
+        "-i", contig_fa,
+        "-a", output_protein_faa,
+        "-p", "meta"
+        ], check=True)
+
 
 #run eggNOG-mapper:
