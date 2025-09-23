@@ -472,3 +472,22 @@ plt.tight_layout()
 plt.show()
 
 #------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
+#assemble into contig:
+ena_fastq="ena_fastq"
+megahit_dir="megahit_dir"
+
+os.makedirs(megahit_dir, exist_ok=True)
+
+for filename in os.listdir(ena_fastq):
+   input_dir=os.path.join(ena_fastq, filename)
+   output_contig_fa=filename.replace(".fastq.gz","_contigs.fa")
+   output_dir=os.path.join(megahit_dir, output_contig_fa)
+   subprocess.run([
+      "megahit",
+      "-r", input_dir,
+      "-o", output_dir
+   ])
+
+#predict ORF:
+
+#run eggNOG-mapper:
