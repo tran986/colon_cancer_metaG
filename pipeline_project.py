@@ -502,23 +502,48 @@ for filename in os.listdir(fastq_chunks):
         "--min-contig-len", "500"], check=True)
        print(f"{output_filename} finish assembling")
 
-"""
 #predict ORF
-prodigal_dir="prodigal_dir"
+prodigal_dir = "prodigal_dir"
 os.makedirs(prodigal_dir, exist_ok=True)
 
 for foldername in os.listdir(megahit_dir):
-   contig_fa=os.path.join(megahit_dir, foldername, "final.contigs.fa")
-   if not os.path.exists(contig_fa):
+    contig_fa = os.path.join(megahit_dir, foldername, "final.contigs.fa")
+    if not os.path.exists(contig_fa):
         print(f"Skipping {foldername}, no contigs found")
         continue
-   output_protein_faa = os.path.join(prodigal_dir, f"{foldername}_proteins.faa")
-   print(f"Predicting ORFs {contig_fa} → {output_protein_faa}")
-   subprocess.run([
-        "prodigal",
-        "-i", contig_fa,
-        "-a", output_protein_faa,
-        "-p", "meta"
+
+    output_protein_faa = os.path.join(prodigal_dir, f"{foldername}_proteins.faa")
+    print(f"Predicting ORFs {contig_fa} → {output_protein_faa}")
+
+    try:
+        subprocess.run([
+            "prodigal",
+            "-i", contig_fa,
+            "-a", output_protein_faa,
+            "-p", "meta"
         ], check=True)
-"""
+    except subprocess.CalledProcessError:
+        print(f"Prodigal failed for {contig_fa}")
+
+
 #run eggNOG-mapper:
+eggnog_dir = "eggnog_out"
+os.makedirs(eggnog_dir, exist_ok=True)
+
+for protein_file in os.listdir(prodigal_dir):
+    if not protein_file.endswith(".faa"):
+        continue
+
+    input_faa = os.path.join(prodigal_dir, protein_file)
+    prefix = os.path.splitext(protein_file)[0]
+    output_prefix = os.path.join(eggnog_dir, prefix)
+
+    print(f"Running eggNOG-mapper on {input_faa}")
+    subprocess.run([
+        "emapper.py",
+        "-i", input_faa,
+        "-o", prefix,
+        "--output_dir", eggnog_dir,
+        "--cpu", "4",
+        "--itype", "proteins"
+    ], check=True)
