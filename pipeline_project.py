@@ -1,23 +1,23 @@
-import urllib.request
-import pandas as pd
-import random
-import numpy as np
+#import urllib.request
+#import pandas as pd
+#import random
+#import numpy as np
 import os
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from scipy.cluster.hierarchy import linkage
-from collections import defaultdict
+#import seaborn as sns
+#import matplotlib.pyplot as plt
+#import matplotlib.patches as mpatches
+#from scipy.cluster.hierarchy import linkage
+#from collections import defaultdict
 import subprocess
-from skbio.diversity import beta_diversity
-from skbio.stats.distance import permanova, DistanceMatrix
-from skbio.stats.ordination import pcoa
-import multiqc
-import shutil
-import gzip
-import statsmodels.formula.api as smf
-from glob import glob
-from tabulate import tabulate
+#from skbio.diversity import beta_diversity
+#from skbio.stats.distance import permanova, DistanceMatrix
+#from skbio.stats.ordination import pcoa
+#import multiqc
+#import shutil
+#import gzip
+#import statsmodels.formula.api as smf
+#from glob import glob
+#from tabulate import tabulate
 
 #------------------------------------------------S1:DOWNLOAD RAW SEQ. SAMPLES FROM ENA: PRJEB7774
 #***Gut microbiome development along the colorectal adenoma-carcinoma sequence (Feng et al, 2015)
@@ -260,7 +260,7 @@ subprocess.run([
      "merge_metaphlan_tables.py", *merge_all_samp,
      "-o", merge_sample_path], check=True)
 
-"""
+
 #------------------------------------------------S4 READ INTO COUNT OUTPUTS:
 #merge_file_path=os.path.join(merge_sample_dir, "all_sample_merged_file.txt") # Replace with actual file path
 # Read the MetaPhlAn table
@@ -319,7 +319,7 @@ df_species_sorted = df_species[sample_cond_gr.sort_values().index]
 group_colors_sorted = group_colors[sample_cond_gr.sort_values().index]
 
 df_species_sorted = df_species_sorted.set_index('Species')
-"""
+
 hm_normalized_species=sns.clustermap(
     df_species_sorted,
     col_colors=group_colors_sorted,
@@ -344,7 +344,7 @@ hm_normalized_species.ax_col_dendrogram.legend(
 )
 plt.show()
 
-"""
+
 
 #------------------------------------------------APPLY LINEAR MODEL AND SIGNIFICANCE TEST(ANOVA) + VISUALIZATION
 print(seq_info_filter)
@@ -403,7 +403,7 @@ print((significant_tax_log.species)) #17
 bar_col = {'Stool sample from controls': 'blue', 
            'Stool sample from advanced adenoma': 'orange', 
            'Stool sample from carcinoma': 'red'}
-"""
+
 for s in significant_tax_log["species"]:
    bar=sns.barplot(x='sample_title', 
             y='count', 
@@ -421,7 +421,7 @@ for s in significant_tax_log["species"]:
    plt.show()
 """
 
-
+"""
 #------------------------------------------------BETA DIVERSITY + FEATURE REDUCTION (PCoA/PCA) + VISUALIZATIONbc
 #bray curtis dis.
 df_species=df_species.set_index("Species")                     
@@ -473,9 +473,11 @@ plt.show()
 
 #------------------------------------------------FUNCTIONAL ANALYSIS/NETWORKING:
 #assemble into contig:
+"""
 fastq_chunks = "fastq_chunks"
 megahit_dir = "megahit_dir"
 os.makedirs(megahit_dir, exist_ok=True)
+
 
 for filename in os.listdir(fastq_chunks):
     if not filename.endswith(".fastq.gz"):
@@ -484,25 +486,23 @@ for filename in os.listdir(fastq_chunks):
     input_file_gunzip = os.path.join(fastq_chunks, filename)
     print(f"Gunzipping {input_file_gunzip}")
     # Uncomment if you want to actually gunzip
-    subprocess.run(["gunzip", "-k", input_file_gunzip], check=True)
+    #subprocess.run(["gunzip", "-k", input_file_gunzip], check=True)
 
-    input_file = filename.replace(".fastq.gz", ".fastq")
-    input_dir = os.path.join(fastq_chunks, input_file)
-
-    output_dir_final = os.path.join(megahit_dir, filename.replace(".fastq.gz", ""))
-    print(f"Assembling {input_file} → {output_dir_final}")
-
-    subprocess.run([
+for filename in os.listdir(fastq_chunks):
+    if filename.endswith(".fastq"):
+       input_dir=os.path.join(fastq_chunks, filename)
+       output_filename=filename.replace(".fastq","")
+       output_dir=os.path.join(megahit_dir,output_filename) 
+       print(f"Assembling {output_filename} into {output_dir}")
+       subprocess.run([
         "megahit",
         "-r", input_dir,
-        "-o", output_dir_final,
-        "--min-contig-len", "500",
-        "--k-min", "21",
-        "--k-max", "49",
-        "--k-step", "8",
-        "--mem-flag", "0"
-    ], check=True)
+        "-o", output_dir,
+        "--no-hw-accel",
+        "--min-contig-len", "500"], check=True)
+       print(f"{output_filename} finish assembling")
 
+"""
 #predict ORF
 prodigal_dir="prodigal_dir"
 os.makedirs(prodigal_dir, exist_ok=True)
@@ -520,6 +520,5 @@ for foldername in os.listdir(megahit_dir):
         "-a", output_protein_faa,
         "-p", "meta"
         ], check=True)
-
-
+"""
 #run eggNOG-mapper:
