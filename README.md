@@ -18,7 +18,7 @@ flowchart LR
     C --> D[Fastp: Trimming based on Phred Score]
     D --> E[MetaPhlan3: Taxa Classification and Abundance]
     E --> F[ANOVA and Linear Model: ID Associated Species]
-    E --> F[Alpha Diversity & Beta Diversity - PCA/PERMANOVA Feature Selection]
+    F --> G[Alpha Diversity & Beta Diversity - PCA/PERMANOVA Feature Selection]
     G --> H[MegaHIT: Contig Assembly]
     H --> I[Prodigal: ORF Prediction]
     I --> J[eggNOG-mapper: Functional Annotation]
