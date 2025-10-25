@@ -28,7 +28,7 @@ flowchart TD
     J --> K[Pathway Network Construction - in progress]
 ```
 
-## Results and Figures:
+## Result Figures:
 <img width="951" height="662" alt="Screenshot 2025-09-14 at 12 50 33 PM" src="https://github.com/user-attachments/assets/98c364a8-92ce-4682-8c88-c735b7ca1319" />
 
 <img width="624" height="472" alt="Screenshot 2025-09-15 at 7 59 53 PM" src="https://github.com/user-attachments/assets/bf0d52f2-478a-4587-9de8-fbcd1d62d1c9" />
@@ -70,6 +70,10 @@ flowchart TD
 | number of groups       | 3                  |
 
 ## Conclusions:
-
-
-# Citations:
+-in progress work-
+With only a subset of samples, we identified biological hits that are interesting. We reveal that
+1. A. muniphila and B. vulgatus, the mucin-degrading and butyrate-producing species that are previously known for their prevalence in healthy individuals are significantly reduced when colon cancer starts. Nevertheless, as the disease progresses to a more advanced stage, we observe a recover in abundance of these bacteria in patients.
+2. Although significant changes at species level were found, we have yet observed such difference at community level (from PCA and PERMANOVA tests). This is maybe due to a smaller set of sample size that we are testing at the moment.
+3. ...
+4. ...
+## Citations:
