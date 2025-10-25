@@ -1,5 +1,4 @@
-# Colon Cancer Metagenomic Sequencing Analysis
-
+# Colon-Cancer Microbiome Metagenomic Sequencing Analytical Pipeline
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![Pandas](https://img.shields.io/badge/Pandas-1.5%2B-blue?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 [![MetaPhlAn](https://img.shields.io/badge/MetaPhlAn-4-orange)](https://github.com/biobakery/MetaPhlAn)
@@ -9,6 +8,25 @@
 ![Matplotlib](https://img.shields.io/badge/Matplotlib-3.7.1-blue)
 ![Seaborn](https://img.shields.io/badge/Seaborn-0.12.2-blue)
 
+## Project Description:
+This project processes raw microbiome metaG shotgun sequences from 3 colon-cancer patient groups (healthy, carcinoma, and advanced adenoma) and outputs biological signals that are associated to each of these 3 stages of the disease at community, species, and functional levels. Summarized steps are shown in the diagram below. 
+
+```mermaid
+flowchart LR
+    A[FASTA Download Based on Run Accession] --> B[FastQC]
+    B --> C[MultiQC]
+    C --> D[Fastp: Trimming based on Phred Score]
+    D --> E[MetaPhlan3: Taxa Classification and Abundance]
+    E --> F[ANOVA and Linear Model: ID Associated Species]
+    E --> F[Alpha Diversity & Beta Diversity - PCA/PERMANOVA Feature Selection]
+    G --> H[MegaHIT: Contig Assembly]
+    H --> I[Prodigal: ORF Prediction]
+    I --> J[eggNOG-mapper: Functional Annotation]
+    J --> K[Pathway Network Construction - in progress]
+```
+## Motivations/Research Questions:
+
+## Results and Figures:
 <img width="951" height="662" alt="Screenshot 2025-09-14 at 12 50 33 PM" src="https://github.com/user-attachments/assets/98c364a8-92ce-4682-8c88-c735b7ca1319" />
 
 <img width="624" height="472" alt="Screenshot 2025-09-15 at 7 59 53 PM" src="https://github.com/user-attachments/assets/bf0d52f2-478a-4587-9de8-fbcd1d62d1c9" />
@@ -49,3 +67,7 @@
 | sample size            | 26                 |
 | number of groups       | 3                  |
 
+## Conclusions:
+
+
+# Citations:
