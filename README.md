@@ -9,10 +9,13 @@
 ![Seaborn](https://img.shields.io/badge/Seaborn-0.12.2-blue)
 
 ## Project Description:
-This project processes raw microbiome metaG shotgun sequences from 3 colon-cancer patient groups (healthy, carcinoma, and advanced adenoma) and outputs biological signals that are associated to each of these 3 stages of the disease at community, species, and functional levels. Summarized steps are shown in the diagram below. 
+This project processes raw microbiome metaG shotgun sequences from 3 colon-cancer patient groups (healthy, carcinoma, and advanced adenoma) and outputs biological signals that are associated to each of these 3 stages of the disease at community, species, and functional levels. 
+
+## Motivations/Research Questions:
+We conduct the project with 2 main questions: What species in the community that are changed throughout each stage of the disease? and what genes/functions of these individuals that are responsible for those changes. To answer those questions, we have a series of analytical steps shown in the diagram below. Another goal is to build a pipeline that is not only reproducible for other type of conditions/data types, but is also optimized, memory and runtime-wise, to run in local machines.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[FASTA Download Based on Run Accession] --> B[FastQC]
     B --> C[MultiQC]
     C --> D[Fastp: Trimming based on Phred Score]
@@ -24,7 +27,6 @@ flowchart LR
     I --> J[eggNOG-mapper: Functional Annotation]
     J --> K[Pathway Network Construction - in progress]
 ```
-## Motivations/Research Questions:
 
 ## Results and Figures:
 <img width="951" height="662" alt="Screenshot 2025-09-14 at 12 50 33 PM" src="https://github.com/user-attachments/assets/98c364a8-92ce-4682-8c88-c735b7ca1319" />
