@@ -41,5 +41,30 @@ var_summarized["Type"].value_counts() #snv is very dominant and complex is only 
 
 # 10.  Where are the variants located?
 print(var_summarized.columns)
-print(var_summarized["OriginSimple"].unique()) #'germline', 'not applicable', 'germline/somatic', 'unknown'
+var_summarized["OriginSimple"].unique() #'germline', 'not applicable', 'germline/somatic', 'unknown'
 
+# ---------- STEP 1: Cleaning the data:
+# 1. Focusing on Benign and Pathogenic "only"
+# 2. Filter out those located in germline and germline/somatic only
+# 3. Filter out those with SNP only:
+
+var_filter=var_summarized.loc[
+    (var_summarized["ClinicalSignificance"].isin(["Benign", "Pathogenic"])) &
+    (var_summarized["OriginSimple"].isin(["germline","germline/somatic","not applicable"])) &
+    (var_summarized["Type"] == "single nucleotide variant")
+]
+print(var_filter.shape)
+
+# ---------- STEP 2: Feature Engineering ← k-mers, encode categories
+"""
+Week 1:
+ Step 1 — Label encode your target column (ClinicalSignificance → 0/1)
+ Step 2 — One-hot encode ReferenceAllele and AlternateAllele
+ Step 3 — Combine into one feature dataframe
+
+Week 2:
+ Step 4 — Write the get_kmers() function and test it on toy sequences
+ Step 5 — Apply it to your real sequence column
+ Step 6 — Use CountVectorizer to turn kmers into a matrix
+
+"""
