@@ -53,9 +53,26 @@ var_filter=var_summarized.loc[
     (var_summarized["OriginSimple"].isin(["germline","germline/somatic","not applicable"])) &
     (var_summarized["Type"] == "single nucleotide variant")
 ]
-print(var_filter.shape)
+var_filter=var_filter.drop(columns=["ReferenceAllele", "AlternateAllele"])
+#write a function the loop through all columns, print out their unique vars and if number of na:
+unique_var=[]
+na_num =[]
 
+for col in var_filter.columns:
+    unique=len(var_filter[col].unique())
+    num= (var_filter[col] == "na").sum()
+    unique_var.append(unique)
+    na_num.append(num)
+
+print(pd.DataFrame({"column_name":var_filter.columns,
+                    "unique variables" : unique_var,
+                    "number of na" : na_num})) #use var filter moving forward - its clean
+   
 # ---------- STEP 2: Feature Engineering ← k-mers, encode categories
+# 1. Look at raw sequences:
+
+
+
 """
 Week 1:
  Step 1 — Label encode your target column (ClinicalSignificance → 0/1)
