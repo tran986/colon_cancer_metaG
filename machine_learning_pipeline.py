@@ -80,9 +80,10 @@ var_filter["OriginSimple"].unique() #'germline', 'not applicable', 'germline/som
 print(var_filter[["Name","ClinicalSignificance","ReferenceAlleleVCF", "AlternateAlleleVCF","PositionVCF", "Chromosome"]].head(5))
 
 #what is number of benign and number of pathogenic after filtering:
-print(var_filter.shape)
-print((var_filter["ClinicalSignificance"] == "Benign").sum())
+var_filter.shape
+(var_filter["ClinicalSignificance"] == "Benign").sum()
 
+# Label encode your target column (ClinicalSignificance → 0/1)
 var_label=var_filter["ClinicalSignificance"]
 condition=[]
 for i in range(len(var_label)):
@@ -92,7 +93,39 @@ for i in range(len(var_label)):
        condition.append(0)
 var_filter["ClinicalSignificant_bin"]=condition
 
+#One-Hot Encoding for ReferenceAlleleVCF and AlternateAlleleVCF:
+ref_vcf=var_filter["ReferenceAlleleVCF"]
+ref_alter=var_filter["AlternateAlleleVCF"]
+
+def aa_convert_func(ref_or_alter, ref_aa):
+    res=[]
+    for i in range(len(ref_or_alter)):
+        if (ref_or_alter[i] == ref_aa):
+            res.append(1)
+        else:
+            res.append(0)
+    return res
+
+ref_list=["ref_A", "ref_T", "ref_G", "ref_c"]
+for i in (ref_list):
+    aa = i[4]
+    
+
+pd.DataFrame({"ref_A": aa_convert_func(ref_vcf, "A"),
+              "ref_T": aa_convert_func(ref_vcf, "T"),
+              "ref_G": aa_convert_func(ref_vcf, "G"),
+              "ref_C": aa_convert_func(ref_vcf, "C")})
+
+
 """
+Original:          One-Hot Encoded:
+                   ref_A  ref_T  ref_C  ref_G 
+"A"        →         1      0      0      0
+"T"        →         0      1      0      0
+"C"        →         0      0      1      0
+"G"        →         0      0      0      1
+Do the same for altA
+
 Week 1:
  Step 1 — Label encode your target column (ClinicalSignificance → 0/1)
  Step 2 — One-hot encode ReferenceAllele and AlternateAllele
