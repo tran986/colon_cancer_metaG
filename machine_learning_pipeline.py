@@ -95,7 +95,7 @@ var_filter["ClinicalSignificant_bin"]=condition
 
 #One-Hot Encoding for ReferenceAlleleVCF and AlternateAlleleVCF:
 ref_vcf=var_filter["ReferenceAlleleVCF"]
-ref_alter=var_filter["AlternateAlleleVCF"]
+alter_vcf=var_filter["AlternateAlleleVCF"]
 
 def aa_convert_func(ref_or_alter, ref_aa):
     res=[]
@@ -106,15 +106,19 @@ def aa_convert_func(ref_or_alter, ref_aa):
             res.append(0)
     return res
 
-ref_list=["ref_A", "ref_T", "ref_G", "ref_c"]
+ref_list=["ref_A", "ref_T", "ref_G", "ref_C"]
+aa_dict_ref = {}
+aa_dict_alt = {}
 for i in (ref_list):
     aa = i[4]
+    aa_dict_ref[f"ref_{aa}"]=aa_convert_func(ref_vcf, aa)
+    aa_dict_alt[f"alter_{aa}"]=aa_convert_func(alter_vcf, aa)
     
+encoded_vcf=pd.concat([pd.DataFrame(aa_dict_alt),
+                       pd.DataFrame(aa_dict_ref)])
+encoded_vcf=encoded_vcf.fillna(0)
 
-pd.DataFrame({"ref_A": aa_convert_func(ref_vcf, "A"),
-              "ref_T": aa_convert_func(ref_vcf, "T"),
-              "ref_G": aa_convert_func(ref_vcf, "G"),
-              "ref_C": aa_convert_func(ref_vcf, "C")})
+
 
 
 """
