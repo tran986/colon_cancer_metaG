@@ -1,5 +1,10 @@
 import pandas as pd
 import numpy as np
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import RandomForestClassifier
+
 # ---------- STEP 0: import ClinVar (NCBI dataset) and exploring the dataset: -------
 
 # 1. Focusing on Benign and Pathogenic "only"
@@ -77,13 +82,13 @@ var_filter["OriginSimple"].unique() #'germline', 'not applicable', 'germline/som
 # ---------- STEP 2: Feature Engineering ← k-mers, encode categories
 # 1. Look at raw sequences:
 #6 columns that are important ClinicalSignificance, ReferenceAlleleVCF, AlternateAlleleVCF, PositionVCF, Chromosome
-print(var_filter[["Name","ClinicalSignificance","ReferenceAlleleVCF", "AlternateAlleleVCF","PositionVCF", "Chromosome"]].head(5))
+#print(var_filter[["Name","ClinicalSignificance","ReferenceAlleleVCF", "AlternateAlleleVCF","PositionVCF", "Chromosome"]].head(5))
 
 #what is number of benign and number of pathogenic after filtering:
 var_filter.shape
 (var_filter["ClinicalSignificance"] == "Benign").sum()
 
-# Label encode your target column (ClinicalSignificance → 0/1)
+#2. Label encode your target column (ClinicalSignificance → 0/1)
 var_label=var_filter["ClinicalSignificance"]
 condition=[]
 for i in range(len(var_label)):
@@ -93,51 +98,76 @@ for i in range(len(var_label)):
        condition.append(0)
 var_filter["ClinicalSignificant_bin"]=condition
 
-#One-Hot Encoding for ReferenceAlleleVCF and AlternateAlleleVCF:
+#3. One-Hot Encoding for ReferenceAlleleVCF and AlternateAlleleVCF:
 ref_vcf=var_filter["ReferenceAlleleVCF"]
 alter_vcf=var_filter["AlternateAlleleVCF"]
 
 def aa_convert_func(ref_or_alter, ref_aa):
     res=[]
     for i in range(len(ref_or_alter)):
-        if (ref_or_alter[i] == ref_aa):
+        if (ref_or_alter.iloc[i] == ref_aa):
             res.append(1)
         else:
             res.append(0)
     return res
 
-ref_list=["ref_A", "ref_T", "ref_G", "ref_C"]
+base=["A", "T", "G", "C"]
 aa_dict_ref = {}
 aa_dict_alt = {}
-for i in (ref_list):
-    aa = i[4]
+for aa in (base):
     aa_dict_ref[f"ref_{aa}"]=aa_convert_func(ref_vcf, aa)
     aa_dict_alt[f"alter_{aa}"]=aa_convert_func(alter_vcf, aa)
     
 encoded_vcf=pd.concat([pd.DataFrame(aa_dict_alt),
-                       pd.DataFrame(aa_dict_ref)])
+                       pd.DataFrame(aa_dict_ref)], axis=1)
 encoded_vcf=encoded_vcf.fillna(0)
+print(encoded_vcf.isnull().sum()) 
+
+# 4: Put all X into 1 df, and Y into 1 df:
+# Y - outcome var:
+y_df=var_filter[["ClinicalSignificant_bin"]]
+print(y_df.head(5))
+
+# X - predictor var A: using VCF:
+encoded_vcf.head(5)
+
+# Sanity check: if x and y have same number of rows? any missing values in x? classes balanced?
+#print(len(encoded_vcf) == len(y_df))
+#print(encoded_vcf.isna().sum())
+#print(encoded_vcf.isnull().sum())
+#print(len(y_df[y_df["ClinicalSignificance"] == "Benign"]) == len(y_df[y_df["ClinicalSignificance"] != "Benign"]))
+
+# ---------- STEP 2: Train/Test Split:
+#1. split the dataset for training (80%) and test (20%)
+x_train, x_test, y_train, y_test = train_test_split(
+    encoded_vcf, #x df
+    y_df,  #y outcome
+    test_size = 0.2, #20% saved for testing
+    random_state=123, #set.seed
+    stratify=y_df #keeps benign/pathogenic ratio same in both splits
+)
+
+print(x_train.shape[0])
+print(x_test.shape[0])
+
+# ---------- STEP 3: Model Training:
+#find a good number of tree? - loop through the loop of n possible of tree, compute score 
+n_list = [10, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 1000]
+scores = []
+for n in n_list: 
+    model = RandomForestClassifier(
+        n_estimators=n,
+        random_state=123,
+        class_weight="balanced"
+    )
+    score = cross_val_score(model, x_train, y_train, cv=5, scoring="roc_auc").mean() #calculate for score
+    print(f"score for {n}: {score:.4f}")
+    scores.append(score)
 
 
 
 
-"""
-Original:          One-Hot Encoded:
-                   ref_A  ref_T  ref_C  ref_G 
-"A"        →         1      0      0      0
-"T"        →         0      1      0      0
-"C"        →         0      0      1      0
-"G"        →         0      0      0      1
-Do the same for altA
+#vcf_model_trained=RandomForestClassifier(
+#    n
+#)
 
-Week 1:
- Step 1 — Label encode your target column (ClinicalSignificance → 0/1)
- Step 2 — One-hot encode ReferenceAllele and AlternateAllele
- Step 3 — Combine into one feature dataframe
-
-Week 2:
- Step 4 — Write the get_kmers() function and test it on toy sequences
- Step 5 — Apply it to your real sequence column
- Step 6 — Use CountVectorizer to turn kmers into a matrix
-
-"""
