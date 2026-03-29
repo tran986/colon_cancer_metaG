@@ -161,8 +161,11 @@ for n in n_list:
         class_weight="balanced"
     )
     score = cross_val_score(model, x_train, y_train, cv=5, scoring="roc_auc").mean() #calculate for score
-    print(f"score for {n}: {score:.4f}")
+    #print(f"score for {n}: {score:.4f}")
     scores.append(score)
+
+score_all_est=pd.DataFrame({"n_tree":n_list,
+            "score":scores})
 
 
 
