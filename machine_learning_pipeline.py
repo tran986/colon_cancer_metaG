@@ -4,6 +4,11 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
+import numpy as np
 
 # ---------- STEP 0: import ClinVar (NCBI dataset) and exploring the dataset: -------
 
@@ -147,8 +152,8 @@ x_train, x_test, y_train, y_test = train_test_split(
     stratify=y_df #keeps benign/pathogenic ratio same in both splits
 )
 
-print(x_train.shape[0])
-print(x_test.shape[0])
+#print(x_train.shape[0])
+#print(x_test.shape[0])
 
 # ---------- STEP 3: Model Training:
 #find a good number of tree? - loop through the loop of n possible of tree, compute score 
@@ -168,9 +173,46 @@ score_all_est=pd.DataFrame({"n_tree":n_list,
             "score":scores})
 
 
+plt.plot(score_all_est["n_tree"], score_all_est["score"])
+plt.xlabel("number of trees")
+plt.ylabel("score")
+plt.title("trees vs scores")
+#plt.show()
 
+#fit model:
+model = RandomForestClassifier(n_estimators=500, random_state=42, 
+                                class_weight="balanced")
+model.fit(x_train, y_train)
 
-#vcf_model_trained=RandomForestClassifier(
-#    n
-#)
+# 3. Predict
+y_pred = model.predict(x_test)
+y_prob = model.predict_proba(x_test)[:, 1]
+
+print(classification_report(y_test, y_pred, 
+      target_names=["Benign", "Pathogenic"]))
+print("ROC-AUC:", roc_auc_score(y_test, y_prob))
+
+y_prob = model.predict_proba(x_test)[:, 1]  
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, 
+         color="blue", 
+         lw=2, 
+         label=f"ROC Curve (AUC = {roc_auc:.2f})")
+
+plt.plot([0, 1], [0, 1], 
+         color="red", 
+         lw=2, 
+         linestyle="--", 
+         label="Random Guessing (AUC = 0.50)")
+
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate (Recall)")
+plt.title("ROC Curve — Variant Effect Predictor")
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
+plt.show()
 
