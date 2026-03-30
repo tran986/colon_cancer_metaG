@@ -69,10 +69,12 @@ flowchart TD
 | sample size            | 26                 |
 | number of groups       | 3                  |
 
-AUC-ROC using VCF as predictors only
+AUC-ROC using VCF as predictors only:
+
 <img width="791" height="592" alt="Screenshot 2026-03-29 at 11 31 58 AM" src="https://github.com/user-attachments/assets/bb5478b8-fab9-4ee2-8bfa-79a410a65b30" />
 
 Number of estimator (trees) vs Scores:
+
 <img width="631" height="472" alt="Screenshot 2026-03-29 at 11 32 40 AM" src="https://github.com/user-attachments/assets/2fe4a424-dfca-4cfb-b306-3fc3015b2d96" />
 
 
