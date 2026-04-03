@@ -255,16 +255,21 @@ y_prob_2 = model.predict_proba(x_test_2)[:, 1]
 print(classification_report(y_test_2, y_pred_2, 
       target_names=["Benign", "Pathogenic"]))
 print("ROC-AUC:", roc_auc_score(y_test_2, y_prob_2))
-"""
-#4: extract model:
-y_prob_2 = model.predict_proba(x_test_2)[:, 1]  
-fpr, tpr, thresholds = roc_curve(y_test, y_prob_2)
-roc_auc = auc(fpr, tpr)
+
+#4. extract model:
+fpr_2, tpr_2, thresholds_2 = roc_curve(y_test_2, y_prob_2)
+roc_auc_2 = auc(fpr_2, tpr_2)
+
+#5. making a AUC ROC with both model 1 and model 2:
 plt.figure(figsize=(8, 6))
 plt.plot(fpr, tpr, 
          color="blue", 
          lw=2, 
-         label=f"ROC Curve (AUC = {roc_auc:.2f})")
+         label=f"ROC Curve VCF changes only (AUC = {roc_auc:.2f})")
+plt.plot(fpr_2, tpr_2, 
+         color="green", 
+         lw=2, 
+         label=f"ROC Curve VCF changes, chromosome, kabuki phenotype and positionVCF (AUC = {roc_auc_2:.2f})")
 
 plt.plot([0, 1], [0, 1], 
          color="red", 
@@ -273,11 +278,11 @@ plt.plot([0, 1], [0, 1],
          label="Random Guessing (AUC = 0.50)")
 
 plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate (Recall)")
-plt.title("ROC Curve — Variant Effect Predictor")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve — Variant Effect vs Variant Effect and 3 others features")
 plt.legend(loc="lower right")
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
-#plt.show()
-"""
+plt.savefig("roc_curve_with_4_features.png", dpi=300)
+plt.show()
+
