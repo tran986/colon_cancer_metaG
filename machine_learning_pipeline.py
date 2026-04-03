@@ -155,7 +155,7 @@ x_train, x_test, y_train, y_test = train_test_split(
 #print(x_train.shape[0])
 #print(x_test.shape[0])
 
-# ---------- STEP 3: Model Training:
+# ---------- STEP 3: Model Training and Evaluating:
 #find a good number of tree? - loop through the loop of n possible of tree, compute score 
 n_list = [10, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 1000]
 scores = []
@@ -214,5 +214,42 @@ plt.legend(loc="lower right")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
-plt.show()
+#plt.show()
+
+# ---------- STEP 4: Model Training 2 + Add more features 
+#take some more features to predict from var_filter:- Chromosome, 
+print(var_filter.columns)
+print(var_filter[["Chromosome","Type", "PositionVCF", "HGNC_ID"]])
+print(var_filter.iloc[0])
+
+var_filter["kabuki_pheno"] = np.where(var_filter["PhenotypeList"] == "Kabuki syndrome", 1, 0)
+#Chromosome, PositionVCF, kabuki_pheno features added: - Put all X into 1 df, and Y into 1 df:
+x_kabuki_df = var_filter[["kabuki_pheno", "Chromosome", "PositionVCF"]]
+
+#clean up "Chromosome" column:
+x_kabuki_df=x_kabuki_df[x_kabuki_df["Chromosome"] != "na"]
+x_kabuki_df[x_kabuki_df["Chromosome"] == "na"].loc
+x_kabuki_df["Chromosome"]=x_kabuki_df["Chromosome"].replace({"X":23})
+print(x_kabuki_df["Chromosome"].unique())
+
+#0. make sure that x and y have the same number of rows
+print(x_kabuki_df.shape)
+print(y_df.shape)
+
+
+#1. split the dataset for training (80%) and test (20%)
+"""
+x_train_2, x_test_2, y_train_2, y_test_2 = train_test_split(
+    x_kabuki_df, #x df
+    y_df,  #y outcome
+    test_size = 0.2, #20% saved for testing
+    random_state=123, #set.seed
+    stratify=y_df #keeps benign/pathogenic ratio same in both splits
+)
+#2.fit model:
+model.fit(x_train_2, y_train_2)
+
+"""
+
+
 
