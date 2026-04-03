@@ -237,7 +237,6 @@ print(x_kabuki_df["Chromosome"].unique())
 print(x_kabuki_df.shape)
 print(y_kabuki_df.shape)
 
-
 #1. split the dataset for training (80%) and test (20%)
 x_train_2, x_test_2, y_train_2, y_test_2 = train_test_split(
     x_kabuki_df, #x df
@@ -255,7 +254,7 @@ y_prob_2 = model.predict_proba(x_test_2)[:, 1]
 
 print(classification_report(y_test_2, y_pred_2, 
       target_names=["Benign", "Pathogenic"]))
-print("ROC-AUC:", roc_auc_score(y_test, y_prob))
+print("ROC-AUC:", roc_auc_score(y_test_2, y_prob_2))
 """
 #4: extract model:
 y_prob_2 = model.predict_proba(x_test_2)[:, 1]  
@@ -281,5 +280,4 @@ plt.grid(True)
 plt.tight_layout()
 plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
 #plt.show()
-
 """
