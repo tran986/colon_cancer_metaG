@@ -227,29 +227,59 @@ var_filter["kabuki_pheno"] = np.where(var_filter["PhenotypeList"] == "Kabuki syn
 x_kabuki_df = var_filter[["kabuki_pheno", "Chromosome", "PositionVCF"]]
 
 #clean up "Chromosome" column:
-x_kabuki_df=x_kabuki_df[x_kabuki_df["Chromosome"] != "na"]
-x_kabuki_df[x_kabuki_df["Chromosome"] == "na"].loc
-x_kabuki_df["Chromosome"]=x_kabuki_df["Chromosome"].replace({"X":23})
+mask = x_kabuki_df["Chromosome"] != "na"
+x_kabuki_df = x_kabuki_df[mask]
+y_kabuki_df = y_df[mask] 
+x_kabuki_df["Chromosome"]=x_kabuki_df["Chromosome"].replace({"X":'23'})
 print(x_kabuki_df["Chromosome"].unique())
 
 #0. make sure that x and y have the same number of rows
 print(x_kabuki_df.shape)
-print(y_df.shape)
+print(y_kabuki_df.shape)
 
 
 #1. split the dataset for training (80%) and test (20%)
-"""
 x_train_2, x_test_2, y_train_2, y_test_2 = train_test_split(
     x_kabuki_df, #x df
-    y_df,  #y outcome
+    y_kabuki_df,  #y outcome
     test_size = 0.2, #20% saved for testing
     random_state=123, #set.seed
-    stratify=y_df #keeps benign/pathogenic ratio same in both splits
+    stratify=y_kabuki_df #keeps benign/pathogenic ratio same in both splits
 )
 #2.fit model:
 model.fit(x_train_2, y_train_2)
 
+# 3. Predict
+y_pred_2 = model.predict(x_test_2)
+y_prob_2 = model.predict_proba(x_test_2)[:, 1]
+
+print(classification_report(y_test_2, y_pred_2, 
+      target_names=["Benign", "Pathogenic"]))
+print("ROC-AUC:", roc_auc_score(y_test, y_prob))
 """
+#4: extract model:
+y_prob_2 = model.predict_proba(x_test_2)[:, 1]  
+fpr, tpr, thresholds = roc_curve(y_test, y_prob_2)
+roc_auc = auc(fpr, tpr)
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, 
+         color="blue", 
+         lw=2, 
+         label=f"ROC Curve (AUC = {roc_auc:.2f})")
 
+plt.plot([0, 1], [0, 1], 
+         color="red", 
+         lw=2, 
+         linestyle="--", 
+         label="Random Guessing (AUC = 0.50)")
 
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate (Recall)")
+plt.title("ROC Curve — Variant Effect Predictor")
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
+#plt.show()
 
+"""
