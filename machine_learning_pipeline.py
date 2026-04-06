@@ -183,6 +183,9 @@ plt.title("trees vs scores")
 model = RandomForestClassifier(n_estimators=500, random_state=42, 
                                 class_weight="balanced")
 model.fit(x_train, y_train)
+important_vcf_df=pd.DataFrame({"feature":encoded_vcf.columns,
+                           "importance":model.feature_importances_})
+print(important_vcf_df)
 
 # 3. Predict
 y_pred = model.predict(x_test)
@@ -216,11 +219,11 @@ plt.tight_layout()
 plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
 #plt.show()
 
-# ---------- STEP 4: Model Training 2 + Add more features 
+# ---------- STEP 4: Model Training 2 + Choose different features 
 #take some more features to predict from var_filter:- Chromosome, 
-print(var_filter.columns)
-print(var_filter[["Chromosome","Type", "PositionVCF", "HGNC_ID"]])
-print(var_filter.iloc[0])
+#print(var_filter.columns)
+#print(var_filter[["Chromosome","Type", "PositionVCF", "HGNC_ID"]])
+#print(var_filter.iloc[0])
 
 var_filter["kabuki_pheno"] = np.where(var_filter["PhenotypeList"] == "Kabuki syndrome", 1, 0)
 #Chromosome, PositionVCF, kabuki_pheno features added: - Put all X into 1 df, and Y into 1 df:
@@ -231,11 +234,11 @@ mask = x_kabuki_df["Chromosome"] != "na"
 x_kabuki_df = x_kabuki_df[mask]
 y_kabuki_df = y_df[mask] 
 x_kabuki_df["Chromosome"]=x_kabuki_df["Chromosome"].replace({"X":'23'})
-print(x_kabuki_df["Chromosome"].unique())
+#print(x_kabuki_df["Chromosome"].unique())
 
 #0. make sure that x and y have the same number of rows
-print(x_kabuki_df.shape)
-print(y_kabuki_df.shape)
+#print(x_kabuki_df.shape)
+#print(y_kabuki_df.shape)
 
 #1. split the dataset for training (80%) and test (20%)
 x_train_2, x_test_2, y_train_2, y_test_2 = train_test_split(
@@ -284,5 +287,62 @@ plt.legend(loc="lower right")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig("roc_curve_with_4_features.png", dpi=300)
-plt.show()
+#plt.show()
 
+#check random foreset features importance:-how much a feature contributes:
+print(x_kabuki_df.head(5))
+important_df_kabuki=pd.DataFrame({"feature":x_kabuki_df.columns,
+                           "importance":model.feature_importances_})
+#print(important_df_kabuki)
+
+# ---------- STEP 5: Model Training 2 + Adding VCF encoded_vcf into kabuki pheno:
+encoded_vcf=encoded_vcf[mask]
+vcf_kabuki_x_df=pd.concat([encoded_vcf, x_kabuki_df], axis=1)
+
+#0. make sure the x and y shape[0] is the same:
+#print(vcf_kabuki_x_df.shape[0] == y_kabuki_df.shape[0])
+
+#1. split the dataset for training (80%) and test (20%)
+x_train_3, x_test_3, y_train_3, y_test_3 = train_test_split(
+    vcf_kabuki_x_df, #x df
+    y_kabuki_df,  #y outcome
+    test_size = 0.2, #20% saved for testing
+    random_state=123, #set.seed
+    stratify=y_kabuki_df #keeps benign/pathogenic ratio same in both splits
+)
+
+#2.fit model:
+model.fit(x_train_3, y_train_3)
+
+#3. Predict
+y_pred_3 = model.predict(x_test_3)
+y_prob_3 = model.predict_proba(x_test_3)[:, 1]
+print(classification_report(y_test_3, y_pred_3, 
+      target_names=["Benign", "Pathogenic"]))
+print("ROC-AUC:", roc_auc_score(y_test_3, y_prob_3))
+
+#4. extract model:
+fpr_3, tpr_3, thresholds_3 = roc_curve(y_test_3, y_prob_3)
+roc_auc_3 = auc(fpr_3, tpr_3)
+
+#5. making a AUC ROC with both model 1 and model 2:
+plt.figure(figsize=(8, 6))
+plt.plot(fpr_3, tpr_3, 
+         color="blue", 
+         lw=2, 
+         label=f"ROC Curve VCF changes only (AUC = {roc_auc_3:.2f})")
+
+plt.plot([0, 1], [0, 1], 
+         color="red", 
+         lw=2, 
+         linestyle="--", 
+         label="Random Guessing (AUC = 0.50)")
+
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve — Combined")
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("roc_curve_combined_features.png", dpi=300)
+plt.show()
