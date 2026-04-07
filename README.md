@@ -79,6 +79,8 @@ AUC-ROC using VCF with or without other features:
 
 <img width="2400" height="1800" alt="roc_curve_with_4_features" src="https://github.com/user-attachments/assets/b9f4c936-b4ec-4a20-8749-4a27e2dac6bb" />
 
+<img width="2400" height="1800" alt="roc_curve_combined_features" src="https://github.com/user-attachments/assets/5c7ea0e4-8243-4cdc-8980-3a1e1679bcbd" />
+
 
 ## Conclusions:
 -in progress work-
