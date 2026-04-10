@@ -221,9 +221,6 @@ plt.savefig("roc_curve.png", dpi=300)   # saves to your project folder
 
 # ---------- STEP 4: Model Training 2 + Choose different features 
 #take some more features to predict from var_filter:- Chromosome, 
-#print(var_filter.columns)
-#print(var_filter[["Chromosome","Type", "PositionVCF", "HGNC_ID"]])
-#print(var_filter.iloc[0])
 
 var_filter["kabuki_pheno"] = np.where(var_filter["PhenotypeList"] == "Kabuki syndrome", 1, 0)
 #Chromosome, PositionVCF, kabuki_pheno features added: - Put all X into 1 df, and Y into 1 df:
@@ -234,11 +231,8 @@ mask = x_kabuki_df["Chromosome"] != "na"
 x_kabuki_df = x_kabuki_df[mask]
 y_kabuki_df = y_df[mask] 
 x_kabuki_df["Chromosome"]=x_kabuki_df["Chromosome"].replace({"X":'23'})
-#print(x_kabuki_df["Chromosome"].unique())
 
 #0. make sure that x and y have the same number of rows
-#print(x_kabuki_df.shape)
-#print(y_kabuki_df.shape)
 
 #1. split the dataset for training (80%) and test (20%)
 x_train_2, x_test_2, y_train_2, y_test_2 = train_test_split(
@@ -355,6 +349,44 @@ plt.legend(loc="lower right")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig("roc_curve_combined_features.png", dpi=300)
-plt.show()
+#plt.show()
+
+#try out other features + calculate for their AUC-ROC + ID their significance:
+print(var_filter["Oncogenicity"].value_counts())
+
+#encode oncogenicity + add x_kabuki_df with oncogenicity feature:
+encoded_onco = []
+for i in var_filter["Oncogenicity"]:
+   if i == "Oncogenic":
+       encoded_onco.append(2)
+   else:
+      if i == "Likely oncogenic":
+          encoded_onco.append(1)
+      else:
+          encoded_onco.append(0)
+
+var_filter["encod_onco"] = encoded_onco
+onco = var_filter["encod_onco"][mask]
+x_onco_kabuki = pd.concat([x_kabuki_df, onco], axis = 1)
+
+#0: ensure x and y have equal rows
+#1:
+x_train_4, x_test_4, y_train_4, y_test_4 = train_test_split(
+    x_onco_kabuki,
+    y_kabuki_df,
+    test_size=0.2,
+    random_state=123,
+    stratify=y_kabuki_df
+)
+
+#2.fit model:
+model.fit(x_train_4, y_train_4)
+
+#3. Predict
+y_pred_4 = model.predict(x_test_4)
+y_prob_4 = model.predict_proba(x_test_4)[:, 1]
+print(classification_report(y_test_4, y_pred_4, 
+      target_names=["Benign", "Pathogenic"]))
+print("ROC-AUC:", roc_auc_score(y_test_4, y_prob_4))
 
 
