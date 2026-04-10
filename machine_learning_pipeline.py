@@ -389,4 +389,48 @@ print(classification_report(y_test_4, y_pred_4,
       target_names=["Benign", "Pathogenic"]))
 print("ROC-AUC:", roc_auc_score(y_test_4, y_prob_4))
 
+#4. Extract:
+fpr_4, tpr_4, thresholds_4 = roc_curve(y_test_4, y_prob_4)
+roc_auc_4 = auc(fpr_4, tpr_4)
+
+#5. making a AUC ROC with both model 1 and model 2:
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, 
+         color="green", 
+         lw=2, 
+         label=f"ROC Curve VCF changes only (AUC = {roc_auc:.2f})")
+
+plt.plot(fpr_2, tpr_2, 
+         color="blue", 
+         lw=2, 
+         label=f"ROC Curve VCF with other 3 features (AUC = {roc_auc_2:.2f})")
+
+plt.plot(fpr_3, tpr_3, 
+         color="red", 
+         lw=2, 
+         label=f"ROC Curve VCF changes in combined with 3 other features (AUC = {roc_auc_3:.2f})")
+
+plt.plot(fpr_4, tpr_4, 
+         color="orange", 
+         lw=2, 
+         label=f"ROC Curve oncogenicity + 3 other features (AUC = {roc_auc_4:.2f})")
+
+
+plt.plot([0, 1], [0, 1], 
+         color="black", 
+         lw=2, 
+         linestyle="--", 
+         label="Random Guessing (AUC = 0.50)")
+
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve — Combined")
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("roc_curve_combined_4features.png", dpi=300)
+plt.show()
+
+
+
 
