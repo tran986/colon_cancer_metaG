@@ -83,13 +83,13 @@ AUC-ROC using VCF with or without other features:
 
 <img width="2400" height="1800" alt="roc_curve_combined_4features" src="https://github.com/user-attachments/assets/b06221c8-a775-44ca-8d17-eca07a5166f6" />
 
-
 ## Conclusions:
 -in progress work-
 With only a subset of samples, we identified biological hits that are interesting. We reveal that
 1. A. muniphila and B. vulgatus, the mucin-degrading and butyrate-producing species that are previously known for their prevalence in healthy individuals are significantly reduced when colon cancer starts. Nevertheless, as the disease progresses to a more advanced stage, we observe a recover in abundance of these bacteria in patients.
 2. Although significant changes at species level were found, we have yet observed such difference at community level (from PCA and PERMANOVA tests). This is maybe due to a smaller set of sample size that we are testing at the moment.
-3. ...
-4. ...
+3. Using the ClinVar (NCBI dataset) and Random Foreset method, we identified 4 different features in SNV (single nucleotide variants) that can significantly use to predict colon cancer pathogenicity: Chromosome, Position of VCF, Kabuki Phenotype and Oncogenicity of the variant (AUC = 0.98)
+4. Interestingly, the use of only VCF nucleotide changes can not predict for pathogenicity phenotype (AUC = 0.61)
+   
 ## Citations:
 1. Feng, Q., Liang, S., Jia, H. et al. Gut microbiome development along the colorectal adenoma–carcinoma sequence. Nat Commun 6, 6528 (2015). 
